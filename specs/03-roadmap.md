@@ -1,10 +1,10 @@
 # Roadmap de Desenvolvimento
 
 ## Fase 1: Fundação do Backend (Clean Arch + DDD)
-- [ ] Criar a solução .NET com a estrutura de pastas (Domain, Application, Infrastructure, API).
-- [ ] Configurar o projeto `Domain` com as entidades centrais (User, Server, Channel, Message) e Value Objects.
-- [ ] Configurar o projeto `Infrastructure` com Entity Framework Core e mapeamento para **PostgreSQL**.
-- [ ] Configurar o pacote **Fluent Results** para o retorno dos casos de uso.
+- [x] Criar a solução .NET com a estrutura de pastas (Domain, Application, Infrastructure, API).
+- [x] Configurar o projeto `Domain` com as entidades centrais (User, Server, Channel, Message) e Value Objects.
+- [x] Configurar o projeto `Infrastructure` com Entity Framework Core e mapeamento para **PostgreSQL**.
+- [x] Configurar o pacote **Fluent Results** para o retorno dos casos de uso.
 
 ## Fase 2: Regras de Negócio e SignalR
 - [ ] Implementar os casos de uso para criação de usuários, servidores e canais.
