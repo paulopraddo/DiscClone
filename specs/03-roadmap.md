@@ -7,9 +7,9 @@
 - [x] Configurar o pacote **Fluent Results** para o retorno dos casos de uso.
 
 ## Fase 2: Regras de Negócio e SignalR
-- [ ] Implementar os casos de uso para criação de usuários, servidores e canais.
-- [ ] Criar o SignalR Hub para gerenciar conexões e salas de chat.
-- [ ] Integrar o salvamento de mensagens via EF Core dentro do fluxo do SignalR.
+- [x] Implementar os casos de uso para criação de usuários, servidores e canais.
+- [x] Criar o SignalR Hub para gerenciar conexões e salas de chat.
+- [x] Integrar o salvamento de mensagens via EF Core dentro do fluxo do SignalR.
 
 ## Fase 3: Frontend (React)
 - [ ] Configurar o projeto React com Vite e roteamento básico.
