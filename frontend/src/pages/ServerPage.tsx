@@ -1,12 +1,16 @@
 import { useParams } from 'react-router-dom'
+import ChannelList from '../components/ChannelList'
 
 function ServerPage() {
   const { serverId } = useParams<{ serverId: string }>()
 
   return (
-    <div>
-      <h1>Servidor {serverId}</h1>
-    </div>
+    <>
+      <ChannelList serverId={serverId!} />
+      <div className="empty-state">
+        <p>Selecione um canal para começar a conversar.</p>
+      </div>
+    </>
   )
 }
 
