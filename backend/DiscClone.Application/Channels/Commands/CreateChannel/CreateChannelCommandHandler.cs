@@ -6,7 +6,10 @@ using MediatR;
 
 namespace DiscClone.Application.Channels.Commands.CreateChannel;
 
-public sealed class CreateChannelCommandHandler(IServerRepository serverRepository, IUnitOfWork unitOfWork)
+public sealed class CreateChannelCommandHandler(
+    IServerRepository serverRepository,
+    IChannelRepository channelRepository,
+    IUnitOfWork unitOfWork)
     : IRequestHandler<CreateChannelCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(CreateChannelCommand request, CancellationToken cancellationToken)
@@ -32,6 +35,7 @@ public sealed class CreateChannelCommandHandler(IServerRepository serverReposito
             return Result.Fail<Guid>(channelResult.Errors);
         }
 
+        await channelRepository.AddAsync(channelResult.Value, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Ok(channelResult.Value.Id);

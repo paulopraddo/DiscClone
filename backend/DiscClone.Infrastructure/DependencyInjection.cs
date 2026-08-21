@@ -1,4 +1,6 @@
+using DiscClone.Domain.Channels;
 using DiscClone.Domain.Common;
+using DiscClone.Domain.Messages;
 using DiscClone.Domain.Servers;
 using DiscClone.Domain.Users;
 using DiscClone.Infrastructure.Persistence;
@@ -20,6 +22,8 @@ public static class DependencyInjection
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IServerRepository, ServerRepository>();
+        services.AddScoped<IChannelRepository, ChannelRepository>();
+        services.AddScoped<IMessageRepository, MessageRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.AddSignalR();
