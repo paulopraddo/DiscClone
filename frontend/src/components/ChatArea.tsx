@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { channels, messages as mockMessages } from '../mock/data'
 import { getLocalUserId } from '../lib/localUser'
 import { ensureConnected, joinChannel, leaveChannel, sendMessage } from '../services/chatHub'
+import { usePeerId } from '../hooks/usePeerId'
 import type { Message } from '../types'
 
 interface ChatAreaProps {
@@ -24,6 +25,7 @@ function ChatArea({ channelId }: ChatAreaProps) {
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
   const localUserId = getLocalUserId()
+  const { peerId } = usePeerId()
 
   useEffect(() => {
     let active = true
@@ -92,7 +94,12 @@ function ChatArea({ channelId }: ChatAreaProps) {
 
   return (
     <section className="chat-area">
-      <header className="chat-header">#{channel?.name ?? ''}</header>
+      <header className="chat-header">
+        <span>#{channel?.name ?? ''}</span>
+        <span className="peer-status" title={peerId ?? 'Conectando ao PeerJS...'}>
+          {peerId ? '🟢 P2P pronto' : '⚪ Conectando P2P...'}
+        </span>
+      </header>
 
       <div className="chat-messages">
         {messages.map((message) => (

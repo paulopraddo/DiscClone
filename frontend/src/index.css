@@ -128,10 +128,17 @@ body {
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 16px;
   border-bottom: 1px solid var(--border);
   color: var(--text-h);
   font-weight: 600;
+}
+
+.peer-status {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
 }
 
 .chat-messages {
