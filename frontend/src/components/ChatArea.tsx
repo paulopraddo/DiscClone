@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { channels, messages as mockMessages } from '../mock/data'
-import { getLocalUserId } from '../lib/localUser'
 import { ensureConnected, joinChannel, leaveChannel, sendMessage } from '../services/chatHub'
-import { usePeerId } from '../hooks/usePeerId'
 import type { Message } from '../types'
 
 interface ChatAreaProps {
   channelId: string
+  localUserId: string
+  peerId: string | null
 }
 
 interface ReceivedMessage {
@@ -17,15 +17,13 @@ interface ReceivedMessage {
   sentAt: string
 }
 
-function ChatArea({ channelId }: ChatAreaProps) {
+function ChatArea({ channelId, localUserId, peerId }: ChatAreaProps) {
   const channel = channels.find((c) => c.id === channelId)
   const [messages, setMessages] = useState<Message[]>(() =>
     mockMessages.filter((m) => m.channelId === channelId),
   )
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const localUserId = getLocalUserId()
-  const { peerId } = usePeerId()
 
   useEffect(() => {
     let active = true

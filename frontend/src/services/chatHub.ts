@@ -44,3 +44,13 @@ export async function sendMessage(channelId: string, authorId: string, content: 
   const hub = await ensureConnected()
   await hub.invoke('SendMessage', channelId, authorId, content)
 }
+
+export async function startScreenShare(channelId: string, authorId: string, peerId: string): Promise<void> {
+  const hub = await ensureConnected()
+  await hub.invoke('StartScreenShare', channelId, authorId, peerId)
+}
+
+export async function stopScreenShare(channelId: string, authorId: string): Promise<void> {
+  const hub = await ensureConnected()
+  await hub.invoke('StopScreenShare', channelId, authorId)
+}

@@ -116,11 +116,60 @@ body {
   color: var(--text-h);
 }
 
+.channel-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .chat-area {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
+}
+
+.screen-share {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 8px 16px;
+}
+
+.screen-share-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.screen-share-controls button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.screen-share-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.screen-share-videos {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.screen-share-video {
+  max-width: 320px;
+  max-height: 180px;
+  border-radius: 8px;
+  background: #000;
 }
 
 .chat-header {

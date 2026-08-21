@@ -32,5 +32,18 @@ public sealed class ChatHub(ISender sender) : Hub
         });
     }
 
+    public Task StartScreenShare(Guid channelId, Guid authorId, string peerId) =>
+        Clients.OthersInGroup(GetGroupName(channelId)).SendAsync("ScreenShareStarted", new
+        {
+            AuthorId = authorId,
+            PeerId = peerId
+        });
+
+    public Task StopScreenShare(Guid channelId, Guid authorId) =>
+        Clients.OthersInGroup(GetGroupName(channelId)).SendAsync("ScreenShareStopped", new
+        {
+            AuthorId = authorId
+        });
+
     public static string GetGroupName(Guid channelId) => $"channel:{channelId}";
 }

@@ -1,4 +1,4 @@
-import Peer from 'peerjs'
+import Peer, { type MediaConnection } from 'peerjs'
 
 let peer: Peer | null = null
 let openPromise: Promise<string> | null = null
@@ -24,4 +24,15 @@ export function ensurePeer(): Promise<{ peer: Peer; id: string }> {
   })
 
   return openPromise.then((id) => ({ peer: instance, id }))
+}
+
+export function onIncomingCall(handler: (call: MediaConnection) => void): () => void {
+  const instance = getPeer()
+  instance.on('call', handler)
+  return () => instance.off('call', handler)
+}
+
+export async function callPeer(remotePeerId: string, stream: MediaStream): Promise<MediaConnection> {
+  const { peer: instance } = await ensurePeer()
+  return instance.call(remotePeerId, stream)
 }
