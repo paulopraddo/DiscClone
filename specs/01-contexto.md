@@ -10,6 +10,7 @@ Aplicação de chat em tempo real e compartilhamento de tela inspirada no Discor
 * **Banco de Dados:** PostgreSQL
 * **ORM:** Entity Framework Core (EF Core)
 * **Tratamento de Resultados/Erros:** Fluent Results
+* **Padrão de Aplicação:** CQRS com MediatR (Commands/Queries e Handlers)
 * **Comunicação em Tempo Real:** SignalR
 
 ### Frontend

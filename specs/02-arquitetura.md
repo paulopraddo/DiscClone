@@ -9,8 +9,8 @@ A solução .NET está dividida nos seguintes projetos/camadas:
    * Totalmente isolada de frameworks externos (sem dependência do EF Core ou ASP.NET Core).
 
 2. **`Application` (Regras de negócio):**
-   * Contém os Casos de Uso (Command/Query Handlers se usar CQRS, ou Services limpos).
-   * Utiliza a biblioteca **Fluent Results** (`Result<T>`) para padronizar o retorno de sucessos e falhas de negócio, evitando exceções para fluxo de controle.
+   * Segue o padrão **CQRS** com **MediatR**: cada caso de uso é um `Command` ou `Query` (`IRequest<T>`) com seu respectivo `Handler` (`IRequestHandler<TRequest, TResponse>`), organizados por feature (ex: `Users/Commands/CreateUser`).
+   * Utiliza a biblioteca **Fluent Results** (`Result<T>`) como tipo de retorno dos Handlers, para padronizar sucessos e falhas de negócio, evitando exceções para fluxo de controle.
 
 3. **`Infrastructure` (Persistência e Integrações):**
    * Configuração do EF Core com **PostgreSQL**.
