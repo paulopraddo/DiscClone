@@ -1,9 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { channels, messages as mockMessages } from '../mock/data'
+import { getLocalUserId } from '../lib/localUser'
+import { ensureConnected, joinChannel, leaveChannel, sendMessage } from '../services/chatHub'
 import type { Message } from '../types'
 
 interface ChatAreaProps {
   channelId: string
+}
+
+interface ReceivedMessage {
+  messageId: string
+  channelId: string
+  authorId: string
+  content: string
+  sentAt: string
 }
 
 function ChatArea({ channelId }: ChatAreaProps) {
@@ -12,6 +22,59 @@ function ChatArea({ channelId }: ChatAreaProps) {
     mockMessages.filter((m) => m.channelId === channelId),
   )
   const [draft, setDraft] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const localUserId = getLocalUserId()
+
+  useEffect(() => {
+    let active = true
+
+    function handleReceiveMessage(payload: ReceivedMessage) {
+      if (payload.channelId !== channelId) {
+        return
+      }
+
+      setMessages((current) => [
+        ...current,
+        {
+          id: payload.messageId,
+          channelId: payload.channelId,
+          author: payload.authorId === localUserId ? 'Você' : payload.authorId,
+          content: payload.content,
+          sentAt: new Date(payload.sentAt).toLocaleTimeString('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+        },
+      ])
+    }
+
+    function handleMessageRejected(reasons: string[]) {
+      if (active) {
+        setError(reasons.join(' '))
+      }
+    }
+
+    ensureConnected()
+      .then((hub) => {
+        hub.on('ReceiveMessage', handleReceiveMessage)
+        hub.on('MessageRejected', handleMessageRejected)
+        return joinChannel(channelId)
+      })
+      .catch((err) => {
+        if (active) {
+          setError(err instanceof Error ? err.message : 'Falha ao conectar ao servidor.')
+        }
+      })
+
+    return () => {
+      active = false
+      leaveChannel(channelId).catch(() => undefined)
+      ensureConnected().then((hub) => {
+        hub.off('ReceiveMessage', handleReceiveMessage)
+        hub.off('MessageRejected', handleMessageRejected)
+      })
+    }
+  }, [channelId, localUserId])
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -20,16 +83,10 @@ function ChatArea({ channelId }: ChatAreaProps) {
       return
     }
 
-    setMessages((current) => [
-      ...current,
-      {
-        id: crypto.randomUUID(),
-        channelId,
-        author: 'Você',
-        content: draft,
-        sentAt: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      },
-    ])
+    setError(null)
+    sendMessage(channelId, localUserId, draft).catch((err) => {
+      setError(err instanceof Error ? err.message : 'Falha ao enviar mensagem.')
+    })
     setDraft('')
   }
 
@@ -46,6 +103,8 @@ function ChatArea({ channelId }: ChatAreaProps) {
           </div>
         ))}
       </div>
+
+      {error && <div className="chat-error">{error}</div>}
 
       <form className="chat-input" onSubmit={handleSubmit}>
         <input

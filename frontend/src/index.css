@@ -158,6 +158,15 @@ body {
   margin: 2px 0 0;
 }
 
+.chat-error {
+  margin: 0 16px 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: rgba(237, 66, 69, 0.1);
+  color: #f23f42;
+  font-size: 14px;
+}
+
 .chat-input {
   padding: 0 16px 24px;
 }
