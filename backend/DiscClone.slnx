@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="DiscClone.API/DiscClone.API.csproj" />
+  <Project Path="DiscClone.Application/DiscClone.Application.csproj" />
+  <Project Path="DiscClone.Infrastructure/DiscClone.Infrastructure.csproj" />
+  <Project Path="DiscClone.Domain/DiscClone.Domain.csproj" />
+</Solution>
