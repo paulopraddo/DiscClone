@@ -22,6 +22,8 @@ public static class DependencyInjection
         services.AddScoped<IServerRepository, ServerRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+        services.AddSignalR();
+
         return services;
     }
 }

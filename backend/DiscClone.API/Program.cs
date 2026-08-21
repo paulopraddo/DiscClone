@@ -1,5 +1,6 @@
 using DiscClone.Application;
 using DiscClone.Infrastructure;
+using DiscClone.Infrastructure.Realtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,5 +25,6 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();
