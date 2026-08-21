@@ -12,9 +12,9 @@
 - [x] Integrar o salvamento de mensagens via EF Core dentro do fluxo do SignalR.
 
 ## Fase 3: Frontend (React)
-- [ ] Configurar o projeto React com Vite e roteamento básico.
-- [ ] Criar a interface visual inspirada no Discord (sidebar de servidores, canais e área de chat).
-- [ ] Conectar o frontend ao backend utilizando o cliente SignalR (`@microsoft/signalr`).
+- [x] Configurar o projeto React com Vite e roteamento básico.
+- [x] Criar a interface visual inspirada no Discord (sidebar de servidores, canais e área de chat).
+- [x] Conectar o frontend ao backend utilizando o cliente SignalR (`@microsoft/signalr`).
 
 ## Fase 4: Compartilhamento de Tela
 - [ ] Integrar o PeerJS no projeto React.
