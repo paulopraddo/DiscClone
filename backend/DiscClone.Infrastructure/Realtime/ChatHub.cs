@@ -49,14 +49,16 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
             AuthorId = GetUserId()
         });
 
-    public async Task<IReadOnlyCollection<string>> JoinVoiceChannel(Guid channelId, string peerId)
+    public async Task<IReadOnlyCollection<VoiceParticipant>> JoinVoiceChannel(Guid channelId, string peerId)
     {
-        var existingPeers = voiceRooms.Join(channelId, peerId, Context.ConnectionId);
+        var username = GetUsername();
+        var existingPeers = voiceRooms.Join(channelId, peerId, username, Context.ConnectionId);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, GetVoiceGroupName(channelId));
         await Clients.OthersInGroup(GetVoiceGroupName(channelId)).SendAsync("VoiceParticipantJoined", new
         {
-            PeerId = peerId
+            PeerId = peerId,
+            Username = username
         });
 
         return existingPeers;
@@ -94,6 +96,9 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
 
     private Guid GetUserId() =>
         Guid.Parse(Context.User!.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    private string GetUsername() =>
+        Context.User!.FindFirstValue(ClaimTypes.Name)!;
 
     public static string GetGroupName(Guid channelId) => $"channel:{channelId}";
 

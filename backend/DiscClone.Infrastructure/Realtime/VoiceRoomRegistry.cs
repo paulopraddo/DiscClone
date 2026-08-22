@@ -2,23 +2,25 @@ using System.Collections.Concurrent;
 
 namespace DiscClone.Infrastructure.Realtime;
 
+public sealed record VoiceParticipant(string PeerId, string Username);
+
 public sealed class VoiceRoomRegistry
 {
-    private readonly ConcurrentDictionary<Guid, ConcurrentDictionary<string, byte>> _rooms = new();
-    private readonly ConcurrentDictionary<string, (Guid ChannelId, string PeerId)> _connections = new();
+    private readonly ConcurrentDictionary<Guid, ConcurrentDictionary<string, string>> _rooms = new();
+    private readonly ConcurrentDictionary<string, (Guid ChannelId, string PeerId, string Username)> _connections = new();
 
-    public IReadOnlyCollection<string> Join(Guid channelId, string peerId, string connectionId)
+    public IReadOnlyCollection<VoiceParticipant> Join(Guid channelId, string peerId, string username, string connectionId)
     {
-        var room = _rooms.GetOrAdd(channelId, _ => new ConcurrentDictionary<string, byte>());
-        var existingPeers = room.Keys.ToArray();
+        var room = _rooms.GetOrAdd(channelId, _ => new ConcurrentDictionary<string, string>());
+        var existingPeers = room.Select(kvp => new VoiceParticipant(kvp.Key, kvp.Value)).ToArray();
 
-        room[peerId] = 0;
-        _connections[connectionId] = (channelId, peerId);
+        room[peerId] = username;
+        _connections[connectionId] = (channelId, peerId, username);
 
         return existingPeers;
     }
 
-    public (Guid ChannelId, string PeerId)? Leave(string connectionId)
+    public (Guid ChannelId, string PeerId, string Username)? Leave(string connectionId)
     {
         if (!_connections.TryRemove(connectionId, out var info))
         {
