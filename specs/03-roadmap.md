@@ -28,3 +28,9 @@
 - [x] Adicionar hash de senha (PBKDF2) e emissão de JWT no registro/login (`POST /api/auth/register`, `POST /api/auth/login`).
 - [x] Proteger o SignalR Hub com `[Authorize]`, autenticando via token JWT na query string e usando o usuário autenticado (não o cliente) como origem de mensagens/eventos.
 - [x] Criar telas de login/registro no frontend e proteger as rotas do app (`RequireAuth`).
+
+## Fase 7: Servidores e Canais Reais
+- [x] Expor `GET /api/servers`, `POST /api/servers` e `POST /api/servers/{id}/channels` (protegidos por JWT), substituindo os dados mock do frontend.
+- [x] Adicionar o conceito de membro de servidor (`ServerMember`) e um fluxo de convite simples (`POST /api/servers/{id}/join`, usando o ID do servidor como convite), permitindo que outros usuários entrem em um servidor.
+- [x] Corrigir falha de autorização: `SendMessage` e o `ChatHub` (`JoinChannel`/`JoinVoiceChannel`) agora verificam se o usuário é membro do servidor antes de aceitar mensagens ou permitir a entrada no canal.
+- [x] UI para criar servidor/canal, entrar em um servidor por ID, e copiar o ID do servidor para convidar alguém.

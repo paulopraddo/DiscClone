@@ -32,6 +32,18 @@ A solução .NET está dividida nos seguintes projetos/camadas:
 
 ---
 
+## Servidores, Membros e Convites
+
+* Um `Server` tem um dono (`OwnerId`) e uma coleção de `ServerMember` — ao criar um servidor, o dono já entra automaticamente como membro.
+* **Não existe descoberta pública de servidores.** A única forma de um usuário ver/acessar um servidor de outra pessoa é entrando nele (`POST /api/servers/{serverId}/join`). O **ID do servidor funciona como o convite**: quem o possui pode entrar; não há um sistema separado de códigos de convite com expiração.
+* `GET /api/servers` lista apenas os servidores em que o usuário autenticado é membro (dono ou convidado), já com os canais de cada um.
+* Somente o **dono** do servidor pode criar canais (`POST /api/servers/{serverId}/channels`) — verificado no `CreateChannelCommandHandler` comparando `server.OwnerId` com o usuário autenticado.
+* **Toda ação sobre um canal exige ser membro do servidor dono dele** — isso é validado em dois pontos, para não depender de um único ponto de falha:
+  * `SendMessageCommandHandler` verifica a associação (via `IServerMemberRepository`) antes de aceitar uma mensagem.
+  * `ChatHub.JoinChannel`/`JoinVoiceChannel` fazem a mesma checagem (`CanAccessChannelQuery`) antes de deixar a conexão entrar no grupo do SignalR, lançando `HubException` caso o usuário não tenha acesso.
+
+---
+
 ## Fluxo de Comunicação
 
 ### 1. Chat de Texto (Tempo Real via SignalR)
