@@ -5,6 +5,7 @@ using DiscClone.Domain.Servers;
 using DiscClone.Domain.Users;
 using DiscClone.Infrastructure.Persistence;
 using DiscClone.Infrastructure.Persistence.Repositories;
+using DiscClone.Infrastructure.Realtime;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.AddSignalR();
+        services.AddSingleton<VoiceRoomRegistry>();
 
         return services;
     }

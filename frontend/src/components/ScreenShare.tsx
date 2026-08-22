@@ -30,6 +30,10 @@ function ScreenShare({ channelId, localUserId, peerId }: ScreenShareProps) {
 
   useEffect(() => {
     const offIncomingCall = onIncomingCall((call) => {
+      if ((call.metadata as { type?: string } | undefined)?.type !== 'screen') {
+        return
+      }
+
       call.answer(localStreamRef.current ?? undefined)
     })
 
@@ -38,7 +42,7 @@ function ScreenShare({ channelId, localUserId, peerId }: ScreenShareProps) {
         return
       }
 
-      callPeer(payload.peerId, new MediaStream())
+      callPeer(payload.peerId, new MediaStream(), { type: 'screen' })
         .then((call) => {
           activeCallRef.current = call
           call.on('stream', (remoteStream) => {

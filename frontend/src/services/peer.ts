@@ -32,7 +32,11 @@ export function onIncomingCall(handler: (call: MediaConnection) => void): () => 
   return () => instance.off('call', handler)
 }
 
-export async function callPeer(remotePeerId: string, stream: MediaStream): Promise<MediaConnection> {
+export async function callPeer(
+  remotePeerId: string,
+  stream: MediaStream,
+  metadata?: unknown,
+): Promise<MediaConnection> {
   const { peer: instance } = await ensurePeer()
-  return instance.call(remotePeerId, stream)
+  return instance.call(remotePeerId, stream, { metadata })
 }

@@ -54,3 +54,14 @@ export async function stopScreenShare(channelId: string, authorId: string): Prom
   const hub = await ensureConnected()
   await hub.invoke('StopScreenShare', channelId, authorId)
 }
+
+export async function joinVoiceChannel(channelId: string, peerId: string): Promise<string[]> {
+  const hub = await ensureConnected()
+  return hub.invoke<string[]>('JoinVoiceChannel', channelId, peerId)
+}
+
+export async function leaveVoiceChannel(channelId: string): Promise<void> {
+  if (connection?.state === HubConnectionState.Connected) {
+    await connection.invoke('LeaveVoiceChannel', channelId)
+  }
+}
