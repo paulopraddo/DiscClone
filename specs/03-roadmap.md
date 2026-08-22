@@ -19,7 +19,7 @@
 ## Fase 4: Compartilhamento de Tela
 - [x] Integrar o PeerJS no projeto React.
 - [x] Implementar a lógica de captura de tela (`getDisplayMedia`) e sinalização via SignalR.
-- [ ] Testar a conexão P2P entre amigos.
+- [x] Testar a conexão P2P entre amigos.
 
 ## Fase 5: Comunicação de Voz
 - [x] Adicionar captura de áudio do microfone e chamadas de voz P2P (PeerJS) nos canais de voz, com sinalização via SignalR (join/leave da sala).
