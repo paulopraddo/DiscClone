@@ -16,9 +16,19 @@ A solução .NET está dividida nos seguintes projetos/camadas:
    * Configuração do EF Core com **PostgreSQL**.
    * Implementação dos repositórios e mapeamentos de banco de dados.
    * Implementação dos Hubs do **SignalR**.
+   * Implementação da autenticação: hash de senha (PBKDF2) e emissão de tokens **JWT**.
 
 4. **`API` (Apresentação):**
    * Endpoints HTTP (Minimal APIs ou Controllers) e configuração da injeção de dependência.
+
+---
+
+## Autenticação
+
+* Senhas nunca são armazenadas em texto puro: são derivadas com **PBKDF2-SHA256** (100.000 iterações, salt aleatório por usuário) antes de persistir.
+* No registro (`POST /api/auth/register`) e no login (`POST /api/auth/login`), o backend responde com um **JWT** (`userId`, `username`, `token`), que o frontend guarda e usa em todas as chamadas subsequentes.
+* O SignalR Hub exige autenticação (`[Authorize]`). Como conexões WebSocket não enviam o header `Authorization`, o token é passado via query string (`?access_token=...`) e validado no evento `OnMessageReceived` do JWT Bearer.
+* O `ChatHub` nunca confia em um `authorId` enviado pelo cliente: ele lê o id do usuário a partir das claims do token validado (`Context.User`), evitando que um cliente malicioso envie mensagens ou eventos em nome de outro usuário.
 
 ---
 

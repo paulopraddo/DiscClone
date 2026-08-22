@@ -23,3 +23,8 @@
 
 ## Fase 5: Comunicação de Voz
 - [x] Adicionar captura de áudio do microfone e chamadas de voz P2P (PeerJS) nos canais de voz, com sinalização via SignalR (join/leave da sala).
+
+## Fase 6: Autenticação de Usuários
+- [x] Adicionar hash de senha (PBKDF2) e emissão de JWT no registro/login (`POST /api/auth/register`, `POST /api/auth/login`).
+- [x] Proteger o SignalR Hub com `[Authorize]`, autenticando via token JWT na query string e usando o usuário autenticado (não o cliente) como origem de mensagens/eventos.
+- [x] Criar telas de login/registro no frontend e proteger as rotas do app (`RequireAuth`).

@@ -12,11 +12,12 @@ Aplicação de chat em tempo real e compartilhamento de tela inspirada no Discor
 * **Tratamento de Resultados/Erros:** Fluent Results
 * **Padrão de Aplicação:** CQRS com MediatR (Commands/Queries e Handlers)
 * **Comunicação em Tempo Real:** SignalR
+* **Autenticação:** JWT (Bearer), com hash de senha via PBKDF2
 
 ### Frontend
 * **Framework:** React (com Vite)
 * **Comunicação Real-time:** `@microsoft/signalr`
-* **Compartilhamento de Tela (P2P):** PeerJS (WebRTC)
+* **Compartilhamento de Tela e Voz (P2P):** PeerJS (WebRTC)
 
 ## Princípios e Padrões de Projeto
 * **Arquitetura:** Clean Architecture (Separação estrita de camadas: Domain, Application, Infrastructure, Presentation/API).
