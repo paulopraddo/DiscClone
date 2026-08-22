@@ -29,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const stored = readStoredUser()
     if (stored) {
       setAuthToken(stored.token)
+      api.setApiAuthToken(stored.token)
     }
     return stored
   })
@@ -37,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const authUser: AuthUser = { userId: auth.userId, username: auth.username, token: auth.token }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser))
     setAuthToken(auth.token)
+    api.setApiAuthToken(auth.token)
     setUser(authUser)
   }, [])
 
@@ -57,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY)
     setAuthToken(null)
+    api.setApiAuthToken(null)
     setUser(null)
   }, [])
 

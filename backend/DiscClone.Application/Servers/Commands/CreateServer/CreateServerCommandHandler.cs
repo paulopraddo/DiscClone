@@ -5,7 +5,10 @@ using MediatR;
 
 namespace DiscClone.Application.Servers.Commands.CreateServer;
 
-public sealed class CreateServerCommandHandler(IServerRepository serverRepository, IUnitOfWork unitOfWork)
+public sealed class CreateServerCommandHandler(
+    IServerRepository serverRepository,
+    IServerMemberRepository serverMemberRepository,
+    IUnitOfWork unitOfWork)
     : IRequestHandler<CreateServerCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(CreateServerCommand request, CancellationToken cancellationToken)
@@ -20,6 +23,7 @@ public sealed class CreateServerCommandHandler(IServerRepository serverRepositor
         var server = Server.Create(nameResult.Value, request.OwnerId).Value;
 
         await serverRepository.AddAsync(server, cancellationToken);
+        await serverMemberRepository.AddAsync(server.Members.Single(), cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Ok(server.Id);

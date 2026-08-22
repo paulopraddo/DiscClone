@@ -4,4 +4,5 @@ using MediatR;
 
 namespace DiscClone.Application.Channels.Commands.CreateChannel;
 
-public sealed record CreateChannelCommand(Guid ServerId, string Name, ChannelType Type) : IRequest<Result<Guid>>;
+public sealed record CreateChannelCommand(Guid ServerId, string Name, ChannelType Type, Guid RequestingUserId)
+    : IRequest<Result<Guid>>;

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using DiscClone.Application.Channels.Queries.CanAccessChannel;
 using DiscClone.Application.Messages.Commands.SendMessage;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -11,8 +12,11 @@ public sealed record VoiceChannelState(IReadOnlyCollection<VoiceParticipant> Par
 [Authorize]
 public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
 {
-    public Task JoinChannel(Guid channelId) =>
-        Groups.AddToGroupAsync(Context.ConnectionId, GetGroupName(channelId));
+    public async Task JoinChannel(Guid channelId)
+    {
+        await EnsureCanAccessChannel(channelId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, GetGroupName(channelId));
+    }
 
     public Task LeaveChannel(Guid channelId) =>
         Groups.RemoveFromGroupAsync(Context.ConnectionId, GetGroupName(channelId));
@@ -53,6 +57,8 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
 
     public async Task<VoiceChannelState> JoinVoiceChannel(Guid channelId, string peerId)
     {
+        await EnsureCanAccessChannel(channelId);
+
         var username = GetUsername();
         var existingPeers = voiceRooms.Join(channelId, peerId, username, Context.ConnectionId);
 
@@ -88,6 +94,16 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
         }
 
         await base.OnDisconnectedAsync(exception);
+    }
+
+    private async Task EnsureCanAccessChannel(Guid channelId)
+    {
+        var result = await sender.Send(new CanAccessChannelQuery(channelId, GetUserId()));
+
+        if (result.IsFailed || !result.Value)
+        {
+            throw new HubException("Você não tem acesso a este canal.");
+        }
     }
 
     private Task BroadcastParticipantLeft(Guid channelId, string peerId)

@@ -33,5 +33,13 @@ public sealed class ServerConfiguration : IEntityTypeConfiguration<Server>
 
         builder.Metadata.FindNavigation(nameof(Server.Channels))!
             .SetPropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasMany(s => s.Members)
+            .WithOne()
+            .HasForeignKey(m => m.ServerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Metadata.FindNavigation(nameof(Server.Members))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
     }
 }

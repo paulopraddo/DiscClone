@@ -28,6 +28,11 @@ public sealed class CreateChannelCommandHandler(
             return Result.Fail<Guid>("Servidor não encontrado.");
         }
 
+        if (server.OwnerId != request.RequestingUserId)
+        {
+            return Result.Fail<Guid>("Você não tem permissão para criar canais neste servidor.");
+        }
+
         var channelResult = server.AddChannel(nameResult.Value, request.Type);
 
         if (channelResult.IsFailed)

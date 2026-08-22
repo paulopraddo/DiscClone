@@ -3,12 +3,13 @@ import ChannelList from '../components/ChannelList'
 import ChatArea from '../components/ChatArea'
 import VoiceChannel from '../components/VoiceChannel'
 import { useAuth } from '../contexts/AuthContext'
-import { channels } from '../mock/data'
+import { useServers } from '../contexts/ServersContext'
 
 function ChannelPage() {
   const { serverId, channelId } = useParams<{ serverId: string; channelId: string }>()
   const { user } = useAuth()
-  const channel = channels.find((c) => c.id === channelId)
+  const { servers } = useServers()
+  const channel = servers.find((s) => s.id === serverId)?.channels.find((c) => c.id === channelId)
 
   return (
     <>
@@ -17,7 +18,7 @@ function ChannelPage() {
         {channel?.type === 'voice' && (
           <VoiceChannel channelId={channelId!} channelName={channel.name} localUserId={user!.userId} />
         )}
-        <ChatArea channelId={channelId!} localUserId={user!.userId} />
+        <ChatArea channelId={channelId!} channelName={channel?.name ?? ''} localUserId={user!.userId} />
       </div>
     </>
   )

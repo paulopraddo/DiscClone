@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { channels, messages as mockMessages } from '../mock/data'
 import { ensureConnected, joinChannel, leaveChannel, sendMessage } from '../services/chatHub'
 import type { Message } from '../types'
 
 interface ChatAreaProps {
   channelId: string
+  channelName: string
   localUserId: string
 }
 
@@ -16,16 +16,14 @@ interface ReceivedMessage {
   sentAt: string
 }
 
-function ChatArea({ channelId, localUserId }: ChatAreaProps) {
-  const channel = channels.find((c) => c.id === channelId)
-  const [messages, setMessages] = useState<Message[]>(() =>
-    mockMessages.filter((m) => m.channelId === channelId),
-  )
+function ChatArea({ channelId, channelName, localUserId }: ChatAreaProps) {
+  const [messages, setMessages] = useState<Message[]>([])
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
+    setMessages([])
 
     function handleReceiveMessage(payload: ReceivedMessage) {
       if (payload.channelId !== channelId) {
@@ -92,7 +90,7 @@ function ChatArea({ channelId, localUserId }: ChatAreaProps) {
   return (
     <section className="chat-area">
       <header className="chat-header">
-        <span>#{channel?.name ?? ''}</span>
+        <span>#{channelName}</span>
       </header>
 
       <div className="chat-messages">
@@ -110,7 +108,7 @@ function ChatArea({ channelId, localUserId }: ChatAreaProps) {
       <form className="chat-input" onSubmit={handleSubmit}>
         <input
           type="text"
-          placeholder={`Conversar em #${channel?.name ?? ''}`}
+          placeholder={`Conversar em #${channelName}`}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
         />
