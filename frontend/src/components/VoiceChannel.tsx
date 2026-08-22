@@ -1,17 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
 import type { MediaConnection } from 'peerjs'
-import { ensureConnected, joinVoiceChannel, leaveVoiceChannel, type VoiceParticipant } from '../services/chatHub'
+import {
+  ensureConnected,
+  joinVoiceChannel,
+  leaveVoiceChannel,
+  type ActiveScreenShare,
+  type VoiceParticipant,
+} from '../services/chatHub'
 import { callPeer, onIncomingCall } from '../services/peer'
+import ScreenShare from './ScreenShare'
 
 interface VoiceChannelProps {
   channelId: string
   channelName: string
+  localUserId: string
   peerId: string | null
 }
 
-function VoiceChannel({ channelId, channelName, peerId }: VoiceChannelProps) {
+function VoiceChannel({ channelId, channelName, localUserId, peerId }: VoiceChannelProps) {
   const [isJoined, setIsJoined] = useState(false)
   const [participants, setParticipants] = useState<VoiceParticipant[]>([])
+  const [activeScreenShare, setActiveScreenShare] = useState<ActiveScreenShare | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const localStreamRef = useRef<MediaStream | null>(null)
@@ -88,9 +97,9 @@ function VoiceChannel({ channelId, channelName, peerId }: VoiceChannelProps) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       localStreamRef.current = stream
 
-      const existingParticipants = await joinVoiceChannel(channelId, peerId)
+      const state = await joinVoiceChannel(channelId, peerId)
 
-      for (const participant of existingParticipants) {
+      for (const participant of state.participants) {
         usernamesRef.current.set(participant.peerId, participant.username)
 
         const call = await callPeer(participant.peerId, stream, { type: 'voice' })
@@ -99,6 +108,7 @@ function VoiceChannel({ channelId, channelName, peerId }: VoiceChannelProps) {
         call.on('close', () => removeParticipant(participant.peerId))
       }
 
+      setActiveScreenShare(state.screenShare)
       setIsJoined(true)
       setError(null)
     } catch (err) {
@@ -116,6 +126,7 @@ function VoiceChannel({ channelId, channelName, peerId }: VoiceChannelProps) {
     usernamesRef.current.clear()
 
     setParticipants([])
+    setActiveScreenShare(null)
     setIsJoined(false)
     leaveVoiceChannel(channelId).catch(() => undefined)
   }
@@ -131,12 +142,22 @@ function VoiceChannel({ channelId, channelName, peerId }: VoiceChannelProps) {
       {error && <div className="chat-error">{error}</div>}
 
       {isJoined && (
-        <ul className="voice-participants">
-          <li>Você</li>
-          {participants.map((participant) => (
-            <li key={participant.peerId}>{participant.username}</li>
-          ))}
-        </ul>
+        <>
+          <ul className="voice-participants">
+            <li>Você</li>
+            {participants.map((participant) => (
+              <li key={participant.peerId}>{participant.username}</li>
+            ))}
+          </ul>
+
+          <ScreenShare
+            channelId={channelId}
+            localUserId={localUserId}
+            peerId={peerId}
+            mode="voice"
+            initialActiveShare={activeScreenShare}
+          />
+        </>
       )}
     </div>
   )

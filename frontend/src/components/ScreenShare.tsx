@@ -1,24 +1,32 @@
 import { useEffect, useRef, useState } from 'react'
 import type { MediaConnection } from 'peerjs'
-import { ensureConnected, startScreenShare, stopScreenShare } from '../services/chatHub'
+import {
+  ensureConnected,
+  startScreenShare,
+  startVoiceScreenShare,
+  stopScreenShare,
+  stopVoiceScreenShare,
+} from '../services/chatHub'
 import { callPeer, onIncomingCall } from '../services/peer'
-
-interface ScreenShareProps {
-  channelId: string
-  localUserId: string
-  peerId: string | null
-}
 
 interface ScreenShareStartedPayload {
   authorId: string
   peerId: string
 }
 
+interface ScreenShareProps {
+  channelId: string
+  localUserId: string
+  peerId: string | null
+  mode?: 'channel' | 'voice'
+  initialActiveShare?: ScreenShareStartedPayload | null
+}
+
 interface ScreenShareStoppedPayload {
   authorId: string
 }
 
-function ScreenShare({ channelId, localUserId, peerId }: ScreenShareProps) {
+function ScreenShare({ channelId, localUserId, peerId, mode = 'channel', initialActiveShare }: ScreenShareProps) {
   const [isSharing, setIsSharing] = useState(false)
   const [remoteAuthorId, setRemoteAuthorId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -27,6 +35,24 @@ function ScreenShare({ channelId, localUserId, peerId }: ScreenShareProps) {
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
   const activeCallRef = useRef<MediaConnection | null>(null)
+  const initialActiveShareRef = useRef(initialActiveShare)
+
+  const latestPropsRef = useRef({ channelId, mode })
+  latestPropsRef.current = { channelId, mode }
+
+  useEffect(() => {
+    return () => {
+      if (!localStreamRef.current) {
+        return
+      }
+
+      localStreamRef.current.getTracks().forEach((track) => track.stop())
+
+      const { channelId, mode } = latestPropsRef.current
+      const stop = mode === 'voice' ? stopVoiceScreenShare(channelId) : stopScreenShare(channelId)
+      stop.catch(() => undefined)
+    }
+  }, [])
 
   useEffect(() => {
     const offIncomingCall = onIncomingCall((call) => {
@@ -37,7 +63,7 @@ function ScreenShare({ channelId, localUserId, peerId }: ScreenShareProps) {
       call.answer(localStreamRef.current ?? undefined)
     })
 
-    function handleStarted(payload: ScreenShareStartedPayload) {
+    function connectToShare(payload: ScreenShareStartedPayload) {
       if (payload.authorId === localUserId) {
         return
       }
@@ -66,14 +92,19 @@ function ScreenShare({ channelId, localUserId, peerId }: ScreenShareProps) {
     }
 
     ensureConnected().then((hub) => {
-      hub.on('ScreenShareStarted', handleStarted)
+      hub.on('ScreenShareStarted', connectToShare)
       hub.on('ScreenShareStopped', handleStopped)
     })
+
+    if (initialActiveShareRef.current) {
+      connectToShare(initialActiveShareRef.current)
+      initialActiveShareRef.current = null
+    }
 
     return () => {
       offIncomingCall()
       ensureConnected().then((hub) => {
-        hub.off('ScreenShareStarted', handleStarted)
+        hub.off('ScreenShareStarted', connectToShare)
         hub.off('ScreenShareStopped', handleStopped)
       })
     }
@@ -95,7 +126,12 @@ function ScreenShare({ channelId, localUserId, peerId }: ScreenShareProps) {
 
       setIsSharing(true)
       setError(null)
-      await startScreenShare(channelId, peerId)
+
+      if (mode === 'voice') {
+        await startVoiceScreenShare(channelId, peerId)
+      } else {
+        await startScreenShare(channelId, peerId)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao iniciar o compartilhamento de tela.')
     }
@@ -105,7 +141,9 @@ function ScreenShare({ channelId, localUserId, peerId }: ScreenShareProps) {
     localStreamRef.current?.getTracks().forEach((track) => track.stop())
     localStreamRef.current = null
     setIsSharing(false)
-    stopScreenShare(channelId).catch(() => undefined)
+
+    const stop = mode === 'voice' ? stopVoiceScreenShare(channelId) : stopScreenShare(channelId)
+    stop.catch(() => undefined)
   }
 
   return (

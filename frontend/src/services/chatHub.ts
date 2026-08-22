@@ -67,13 +67,33 @@ export interface VoiceParticipant {
   username: string
 }
 
-export async function joinVoiceChannel(channelId: string, peerId: string): Promise<VoiceParticipant[]> {
+export interface ActiveScreenShare {
+  authorId: string
+  peerId: string
+}
+
+export interface VoiceChannelState {
+  participants: VoiceParticipant[]
+  screenShare: ActiveScreenShare | null
+}
+
+export async function joinVoiceChannel(channelId: string, peerId: string): Promise<VoiceChannelState> {
   const hub = await ensureConnected()
-  return hub.invoke<VoiceParticipant[]>('JoinVoiceChannel', channelId, peerId)
+  return hub.invoke<VoiceChannelState>('JoinVoiceChannel', channelId, peerId)
 }
 
 export async function leaveVoiceChannel(channelId: string): Promise<void> {
   if (connection?.state === HubConnectionState.Connected) {
     await connection.invoke('LeaveVoiceChannel', channelId)
   }
+}
+
+export async function startVoiceScreenShare(channelId: string, peerId: string): Promise<void> {
+  const hub = await ensureConnected()
+  await hub.invoke('StartVoiceScreenShare', channelId, peerId)
+}
+
+export async function stopVoiceScreenShare(channelId: string): Promise<void> {
+  const hub = await ensureConnected()
+  await hub.invoke('StopVoiceScreenShare', channelId)
 }

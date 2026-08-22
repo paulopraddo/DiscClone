@@ -18,7 +18,15 @@ function ChannelPage() {
       <ChannelList serverId={serverId!} />
       <div className="channel-main">
         {channel?.type === 'voice' ? (
-          <VoiceChannel channelId={channelId!} channelName={channel.name} peerId={peerId} />
+          <>
+            <VoiceChannel
+              channelId={channelId!}
+              channelName={channel.name}
+              localUserId={user!.userId}
+              peerId={peerId}
+            />
+            <ChatArea channelId={channelId!} localUserId={user!.userId} peerId={peerId} />
+          </>
         ) : (
           <>
             <ScreenShare channelId={channelId!} localUserId={user!.userId} peerId={peerId} />
