@@ -1,21 +1,64 @@
 import { HubConnectionBuilder, HubConnectionState, LogLevel, type HubConnection } from '@microsoft/signalr'
 
+export interface VoiceParticipant {
+  peerId: string
+  username: string
+}
+
+export interface VoiceChannelState {
+  participants: VoiceParticipant[]
+}
+
 let connection: HubConnection | null = null
 let connectPromise: Promise<void> | null = null
 let authToken: string | null = null
+
+let activeChannelId: string | null = null
+let activeVoice: { channelId: string; peerId: string } | null = null
+let voiceRejoinHandler: ((state: VoiceChannelState) => void) | null = null
 
 export function setAuthToken(token: string | null): void {
   authToken = token
 }
 
+export function onVoiceRejoin(handler: ((state: VoiceChannelState) => void) | null): void {
+  voiceRejoinHandler = handler
+}
+
 function getConnection(): HubConnection {
-  connection ??= new HubConnectionBuilder()
+  if (connection) {
+    return connection
+  }
+
+  connection = new HubConnectionBuilder()
     .withUrl(`${import.meta.env.VITE_API_URL}/hubs/chat`, {
       accessTokenFactory: () => authToken ?? '',
     })
     .withAutomaticReconnect()
     .configureLogging(LogLevel.Warning)
     .build()
+
+  // SignalR issues a new ConnectionId on reconnect, which silently drops any
+  // group membership (channel/voice groups) the previous connection had.
+  // Without rejoining here, broadcasts (messages, screen share, participants)
+  // stop reaching this client after any transient disconnect.
+  connection.onreconnected(async () => {
+    const hub = connection!
+
+    if (activeChannelId) {
+      await hub.invoke('JoinChannel', activeChannelId).catch(() => undefined)
+    }
+
+    if (activeVoice) {
+      const state = await hub
+        .invoke<VoiceChannelState>('JoinVoiceChannel', activeVoice.channelId, activeVoice.peerId)
+        .catch(() => null)
+
+      if (state) {
+        voiceRejoinHandler?.(state)
+      }
+    }
+  })
 
   return connection
 }
@@ -38,10 +81,15 @@ export async function ensureConnected(): Promise<HubConnection> {
 
 export async function joinChannel(channelId: string): Promise<void> {
   const hub = await ensureConnected()
+  activeChannelId = channelId
   await hub.invoke('JoinChannel', channelId)
 }
 
 export async function leaveChannel(channelId: string): Promise<void> {
+  if (activeChannelId === channelId) {
+    activeChannelId = null
+  }
+
   if (connection?.state === HubConnectionState.Connected) {
     await connection.invoke('LeaveChannel', channelId)
   }
@@ -52,37 +100,17 @@ export async function sendMessage(channelId: string, content: string): Promise<v
   await hub.invoke('SendMessage', channelId, content)
 }
 
-export async function startScreenShare(channelId: string, peerId: string): Promise<void> {
-  const hub = await ensureConnected()
-  await hub.invoke('StartScreenShare', channelId, peerId)
-}
-
-export async function stopScreenShare(channelId: string): Promise<void> {
-  const hub = await ensureConnected()
-  await hub.invoke('StopScreenShare', channelId)
-}
-
-export interface VoiceParticipant {
-  peerId: string
-  username: string
-}
-
-export interface ActiveScreenShare {
-  authorId: string
-  peerId: string
-}
-
-export interface VoiceChannelState {
-  participants: VoiceParticipant[]
-  screenShare: ActiveScreenShare | null
-}
-
 export async function joinVoiceChannel(channelId: string, peerId: string): Promise<VoiceChannelState> {
   const hub = await ensureConnected()
+  activeVoice = { channelId, peerId }
   return hub.invoke<VoiceChannelState>('JoinVoiceChannel', channelId, peerId)
 }
 
 export async function leaveVoiceChannel(channelId: string): Promise<void> {
+  if (activeVoice?.channelId === channelId) {
+    activeVoice = null
+  }
+
   if (connection?.state === HubConnectionState.Connected) {
     await connection.invoke('LeaveVoiceChannel', channelId)
   }

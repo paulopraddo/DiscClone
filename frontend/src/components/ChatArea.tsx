@@ -6,7 +6,6 @@ import type { Message } from '../types'
 interface ChatAreaProps {
   channelId: string
   localUserId: string
-  peerId: string | null
 }
 
 interface ReceivedMessage {
@@ -17,7 +16,7 @@ interface ReceivedMessage {
   sentAt: string
 }
 
-function ChatArea({ channelId, localUserId, peerId }: ChatAreaProps) {
+function ChatArea({ channelId, localUserId }: ChatAreaProps) {
   const channel = channels.find((c) => c.id === channelId)
   const [messages, setMessages] = useState<Message[]>(() =>
     mockMessages.filter((m) => m.channelId === channelId),
@@ -94,9 +93,6 @@ function ChatArea({ channelId, localUserId, peerId }: ChatAreaProps) {
     <section className="chat-area">
       <header className="chat-header">
         <span>#{channel?.name ?? ''}</span>
-        <span className="peer-status" title={peerId ?? 'Conectando ao PeerJS...'}>
-          {peerId ? '🟢 P2P pronto' : '⚪ Conectando P2P...'}
-        </span>
       </header>
 
       <div className="chat-messages">

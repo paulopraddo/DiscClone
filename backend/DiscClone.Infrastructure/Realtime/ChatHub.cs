@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace DiscClone.Infrastructure.Realtime;
 
-public sealed record VoiceChannelState(IReadOnlyCollection<VoiceParticipant> Participants, ActiveScreenShare? ScreenShare);
+public sealed record VoiceChannelState(IReadOnlyCollection<VoiceParticipant> Participants);
 
 [Authorize]
 public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
@@ -38,47 +38,23 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
         });
     }
 
-    public Task StartScreenShare(Guid channelId, string peerId) =>
-        Clients.OthersInGroup(GetGroupName(channelId)).SendAsync("ScreenShareStarted", new
+    public Task StartVoiceScreenShare(Guid channelId, string peerId) =>
+        Clients.OthersInGroup(GetVoiceGroupName(channelId)).SendAsync("ScreenShareStarted", new
         {
             AuthorId = GetUserId(),
             PeerId = peerId
         });
 
-    public Task StopScreenShare(Guid channelId) =>
-        Clients.OthersInGroup(GetGroupName(channelId)).SendAsync("ScreenShareStopped", new
+    public Task StopVoiceScreenShare(Guid channelId) =>
+        Clients.OthersInGroup(GetVoiceGroupName(channelId)).SendAsync("ScreenShareStopped", new
         {
             AuthorId = GetUserId()
         });
-
-    public Task StartVoiceScreenShare(Guid channelId, string peerId)
-    {
-        var authorId = GetUserId();
-        voiceRooms.SetScreenShare(channelId, authorId, peerId);
-
-        return Clients.OthersInGroup(GetVoiceGroupName(channelId)).SendAsync("ScreenShareStarted", new
-        {
-            AuthorId = authorId,
-            PeerId = peerId
-        });
-    }
-
-    public Task StopVoiceScreenShare(Guid channelId)
-    {
-        var authorId = GetUserId();
-        voiceRooms.ClearScreenShare(channelId, authorId);
-
-        return Clients.OthersInGroup(GetVoiceGroupName(channelId)).SendAsync("ScreenShareStopped", new
-        {
-            AuthorId = authorId
-        });
-    }
 
     public async Task<VoiceChannelState> JoinVoiceChannel(Guid channelId, string peerId)
     {
         var username = GetUsername();
         var existingPeers = voiceRooms.Join(channelId, peerId, username, Context.ConnectionId);
-        var activeScreenShare = voiceRooms.GetActiveScreenShare(channelId);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, GetVoiceGroupName(channelId));
         await Clients.OthersInGroup(GetVoiceGroupName(channelId)).SendAsync("VoiceParticipantJoined", new
@@ -87,7 +63,7 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
             Username = username
         });
 
-        return new VoiceChannelState(existingPeers, activeScreenShare);
+        return new VoiceChannelState(existingPeers);
     }
 
     public async Task LeaveVoiceChannel(Guid channelId)
@@ -98,18 +74,7 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
 
         if (info is not null)
         {
-            await Clients.OthersInGroup(GetVoiceGroupName(channelId)).SendAsync("VoiceParticipantLeft", new
-            {
-                PeerId = info.Value.PeerId
-            });
-
-            if (info.Value.ScreenShareStopped)
-            {
-                await Clients.OthersInGroup(GetVoiceGroupName(channelId)).SendAsync("ScreenShareStopped", new
-                {
-                    AuthorId = GetUserId()
-                });
-            }
+            await BroadcastParticipantLeft(channelId, info.Value.PeerId);
         }
     }
 
@@ -119,23 +84,20 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
 
         if (info is not null)
         {
-            var voiceGroup = GetVoiceGroupName(info.Value.ChannelId);
-
-            await Clients.OthersInGroup(voiceGroup).SendAsync("VoiceParticipantLeft", new
-            {
-                PeerId = info.Value.PeerId
-            });
-
-            if (info.Value.ScreenShareStopped)
-            {
-                await Clients.OthersInGroup(voiceGroup).SendAsync("ScreenShareStopped", new
-                {
-                    AuthorId = GetUserId()
-                });
-            }
+            await BroadcastParticipantLeft(info.Value.ChannelId, info.Value.PeerId);
         }
 
         await base.OnDisconnectedAsync(exception);
+    }
+
+    private Task BroadcastParticipantLeft(Guid channelId, string peerId)
+    {
+        var voiceGroup = GetVoiceGroupName(channelId);
+        var authorId = GetUserId();
+
+        return Task.WhenAll(
+            Clients.OthersInGroup(voiceGroup).SendAsync("VoiceParticipantLeft", new { PeerId = peerId }),
+            Clients.OthersInGroup(voiceGroup).SendAsync("ScreenShareStopped", new { AuthorId = authorId }));
     }
 
     private Guid GetUserId() =>

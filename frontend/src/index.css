@@ -194,12 +194,6 @@ body {
   font-weight: 600;
 }
 
-.peer-status {
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--text-muted);
-}
-
 .chat-messages {
   flex: 1;
   overflow-y: auto;

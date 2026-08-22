@@ -4,13 +4,10 @@ namespace DiscClone.Infrastructure.Realtime;
 
 public sealed record VoiceParticipant(string PeerId, string Username);
 
-public sealed record ActiveScreenShare(Guid AuthorId, string PeerId);
-
 public sealed class VoiceRoomRegistry
 {
     private readonly ConcurrentDictionary<Guid, ConcurrentDictionary<string, string>> _rooms = new();
     private readonly ConcurrentDictionary<string, (Guid ChannelId, string PeerId, string Username)> _connections = new();
-    private readonly ConcurrentDictionary<Guid, ActiveScreenShare> _activeScreenShares = new();
 
     public IReadOnlyCollection<VoiceParticipant> Join(Guid channelId, string peerId, string username, string connectionId)
     {
@@ -23,7 +20,7 @@ public sealed class VoiceRoomRegistry
         return existingPeers;
     }
 
-    public (Guid ChannelId, string PeerId, string Username, bool ScreenShareStopped)? Leave(string connectionId)
+    public (Guid ChannelId, string PeerId, string Username)? Leave(string connectionId)
     {
         if (!_connections.TryRemove(connectionId, out var info))
         {
@@ -35,24 +32,6 @@ public sealed class VoiceRoomRegistry
             room.TryRemove(info.PeerId, out _);
         }
 
-        var screenShareStopped = _activeScreenShares.TryGetValue(info.ChannelId, out var share)
-            && share.PeerId == info.PeerId
-            && _activeScreenShares.TryRemove(info.ChannelId, out _);
-
-        return (info.ChannelId, info.PeerId, info.Username, screenShareStopped);
+        return info;
     }
-
-    public void SetScreenShare(Guid channelId, Guid authorId, string peerId) =>
-        _activeScreenShares[channelId] = new ActiveScreenShare(authorId, peerId);
-
-    public void ClearScreenShare(Guid channelId, Guid authorId)
-    {
-        if (_activeScreenShares.TryGetValue(channelId, out var share) && share.AuthorId == authorId)
-        {
-            _activeScreenShares.TryRemove(channelId, out _);
-        }
-    }
-
-    public ActiveScreenShare? GetActiveScreenShare(Guid channelId) =>
-        _activeScreenShares.TryGetValue(channelId, out var share) ? share : null;
 }
