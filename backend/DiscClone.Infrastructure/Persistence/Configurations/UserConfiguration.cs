@@ -24,6 +24,10 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .HasColumnName("email")
             .IsRequired();
 
+        builder.Property(u => u.PasswordHash)
+            .HasColumnName("password_hash")
+            .IsRequired();
+
         builder.Property(u => u.CreatedAt)
             .HasColumnName("created_at")
             .IsRequired();

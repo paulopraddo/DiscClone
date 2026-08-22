@@ -95,7 +95,7 @@ function ScreenShare({ channelId, localUserId, peerId }: ScreenShareProps) {
 
       setIsSharing(true)
       setError(null)
-      await startScreenShare(channelId, localUserId, peerId)
+      await startScreenShare(channelId, peerId)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao iniciar o compartilhamento de tela.')
     }
@@ -105,7 +105,7 @@ function ScreenShare({ channelId, localUserId, peerId }: ScreenShareProps) {
     localStreamRef.current?.getTracks().forEach((track) => track.stop())
     localStreamRef.current = null
     setIsSharing(false)
-    stopScreenShare(channelId, localUserId).catch(() => undefined)
+    stopScreenShare(channelId).catch(() => undefined)
   }
 
   return (

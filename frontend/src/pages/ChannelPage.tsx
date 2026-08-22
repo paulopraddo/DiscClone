@@ -3,13 +3,13 @@ import ChannelList from '../components/ChannelList'
 import ChatArea from '../components/ChatArea'
 import ScreenShare from '../components/ScreenShare'
 import VoiceChannel from '../components/VoiceChannel'
+import { useAuth } from '../contexts/AuthContext'
 import { usePeerId } from '../hooks/usePeerId'
-import { getLocalUserId } from '../lib/localUser'
 import { channels } from '../mock/data'
 
 function ChannelPage() {
   const { serverId, channelId } = useParams<{ serverId: string; channelId: string }>()
-  const localUserId = getLocalUserId()
+  const { user } = useAuth()
   const { peerId } = usePeerId()
   const channel = channels.find((c) => c.id === channelId)
 
@@ -21,8 +21,8 @@ function ChannelPage() {
           <VoiceChannel channelId={channelId!} channelName={channel.name} peerId={peerId} />
         ) : (
           <>
-            <ScreenShare channelId={channelId!} localUserId={localUserId} peerId={peerId} />
-            <ChatArea channelId={channelId!} localUserId={localUserId} peerId={peerId} />
+            <ScreenShare channelId={channelId!} localUserId={user!.userId} peerId={peerId} />
+            <ChatArea channelId={channelId!} localUserId={user!.userId} peerId={peerId} />
           </>
         )}
       </div>

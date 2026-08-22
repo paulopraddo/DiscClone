@@ -2,10 +2,17 @@ import { HubConnectionBuilder, HubConnectionState, LogLevel, type HubConnection 
 
 let connection: HubConnection | null = null
 let connectPromise: Promise<void> | null = null
+let authToken: string | null = null
+
+export function setAuthToken(token: string | null): void {
+  authToken = token
+}
 
 function getConnection(): HubConnection {
   connection ??= new HubConnectionBuilder()
-    .withUrl(`${import.meta.env.VITE_API_URL}/hubs/chat`, { withCredentials: true })
+    .withUrl(`${import.meta.env.VITE_API_URL}/hubs/chat`, {
+      accessTokenFactory: () => authToken ?? '',
+    })
     .withAutomaticReconnect()
     .configureLogging(LogLevel.Warning)
     .build()
@@ -40,19 +47,19 @@ export async function leaveChannel(channelId: string): Promise<void> {
   }
 }
 
-export async function sendMessage(channelId: string, authorId: string, content: string): Promise<void> {
+export async function sendMessage(channelId: string, content: string): Promise<void> {
   const hub = await ensureConnected()
-  await hub.invoke('SendMessage', channelId, authorId, content)
+  await hub.invoke('SendMessage', channelId, content)
 }
 
-export async function startScreenShare(channelId: string, authorId: string, peerId: string): Promise<void> {
+export async function startScreenShare(channelId: string, peerId: string): Promise<void> {
   const hub = await ensureConnected()
-  await hub.invoke('StartScreenShare', channelId, authorId, peerId)
+  await hub.invoke('StartScreenShare', channelId, peerId)
 }
 
-export async function stopScreenShare(channelId: string, authorId: string): Promise<void> {
+export async function stopScreenShare(channelId: string): Promise<void> {
   const hub = await ensureConnected()
-  await hub.invoke('StopScreenShare', channelId, authorId)
+  await hub.invoke('StopScreenShare', channelId)
 }
 
 export async function joinVoiceChannel(channelId: string, peerId: string): Promise<string[]> {

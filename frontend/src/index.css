@@ -73,6 +73,16 @@ body {
   font-size: 13px;
 }
 
+.server-rail-spacer {
+  flex: 1;
+}
+
+.logout-icon {
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
 .channel-list {
   width: 240px;
   flex-shrink: 0;
@@ -240,6 +250,78 @@ body {
 
 .chat-input input:focus {
   outline: none;
+}
+
+.auth-page {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-form {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--sidebar-bg);
+  padding: 32px;
+  border-radius: 8px;
+}
+
+.auth-form h1 {
+  margin: 0;
+  font-size: 24px;
+  color: var(--text-h);
+}
+
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.auth-form input {
+  border: none;
+  border-radius: 4px;
+  padding: 10px;
+  background: #1e1f22;
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+}
+
+.auth-form input:focus {
+  outline: none;
+}
+
+.auth-form button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.auth-switch {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.auth-switch a {
+  color: var(--accent);
 }
 
 .voice-channel {

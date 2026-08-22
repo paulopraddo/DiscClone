@@ -84,7 +84,7 @@ function ChatArea({ channelId, localUserId, peerId }: ChatAreaProps) {
     }
 
     setError(null)
-    sendMessage(channelId, localUserId, draft).catch((err) => {
+    sendMessage(channelId, draft).catch((err) => {
       setError(err instanceof Error ? err.message : 'Falha ao enviar mensagem.')
     })
     setDraft('')

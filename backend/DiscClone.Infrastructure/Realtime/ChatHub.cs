@@ -1,9 +1,12 @@
+using System.Security.Claims;
 using DiscClone.Application.Messages.Commands.SendMessage;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace DiscClone.Infrastructure.Realtime;
 
+[Authorize]
 public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
 {
     public Task JoinChannel(Guid channelId) =>
@@ -12,8 +15,9 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
     public Task LeaveChannel(Guid channelId) =>
         Groups.RemoveFromGroupAsync(Context.ConnectionId, GetGroupName(channelId));
 
-    public async Task SendMessage(Guid channelId, Guid authorId, string content)
+    public async Task SendMessage(Guid channelId, string content)
     {
+        var authorId = GetUserId();
         var result = await sender.Send(new SendMessageCommand(channelId, authorId, content));
 
         if (result.IsFailed)
@@ -32,17 +36,17 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
         });
     }
 
-    public Task StartScreenShare(Guid channelId, Guid authorId, string peerId) =>
+    public Task StartScreenShare(Guid channelId, string peerId) =>
         Clients.OthersInGroup(GetGroupName(channelId)).SendAsync("ScreenShareStarted", new
         {
-            AuthorId = authorId,
+            AuthorId = GetUserId(),
             PeerId = peerId
         });
 
-    public Task StopScreenShare(Guid channelId, Guid authorId) =>
+    public Task StopScreenShare(Guid channelId) =>
         Clients.OthersInGroup(GetGroupName(channelId)).SendAsync("ScreenShareStopped", new
         {
-            AuthorId = authorId
+            AuthorId = GetUserId()
         });
 
     public async Task<IReadOnlyCollection<string>> JoinVoiceChannel(Guid channelId, string peerId)
@@ -87,6 +91,9 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
 
         await base.OnDisconnectedAsync(exception);
     }
+
+    private Guid GetUserId() =>
+        Guid.Parse(Context.User!.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     public static string GetGroupName(Guid channelId) => $"channel:{channelId}";
 
