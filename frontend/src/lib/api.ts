@@ -10,6 +10,14 @@ export interface ChannelSummary {
   type: 'text' | 'voice'
 }
 
+export interface MessageSummary {
+  id: string
+  authorId: string
+  authorUsername: string
+  content: string
+  sentAt: string
+}
+
 export interface ServerSummary {
   id: string
   name: string
@@ -68,4 +76,8 @@ export function createChannel(
 
 export function joinServer(serverId: string): Promise<void> {
   return request<void>(`/api/servers/${serverId}/join`, { method: 'POST' })
+}
+
+export function getChannelMessages(channelId: string): Promise<MessageSummary[]> {
+  return request<MessageSummary[]>(`/api/channels/${channelId}/messages`, { method: 'GET' })
 }

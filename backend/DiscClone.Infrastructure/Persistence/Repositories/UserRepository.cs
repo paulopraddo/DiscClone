@@ -14,6 +14,10 @@ public sealed class UserRepository(DiscCloneDbContext dbContext) : IUserReposito
     public Task<User?> GetByEmailAsync(Email email, CancellationToken cancellationToken = default) =>
         dbContext.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
 
+    public async Task<IReadOnlyCollection<User>> GetByIdsAsync(
+        IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default) =>
+        await dbContext.Users.Where(u => ids.Contains(u.Id)).ToListAsync(cancellationToken);
+
     public async Task AddAsync(User user, CancellationToken cancellationToken = default) =>
         await dbContext.Users.AddAsync(user, cancellationToken);
 }

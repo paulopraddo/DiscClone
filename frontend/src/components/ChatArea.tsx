@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { getChannelMessages } from '../lib/api'
 import { ensureConnected, joinChannel, leaveChannel, sendMessage } from '../services/chatHub'
 import type { Message } from '../types'
 
@@ -12,18 +13,30 @@ interface ReceivedMessage {
   messageId: string
   channelId: string
   authorId: string
+  authorUsername: string
   content: string
   sentAt: string
 }
 
+function formatTime(sentAt: string) {
+  return new Date(sentAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
+
 function ChatArea({ channelId, channelName, localUserId }: ChatAreaProps) {
   const [messages, setMessages] = useState<Message[]>([])
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true)
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: 'end' })
+  }, [messages, isLoadingHistory])
 
   useEffect(() => {
     let active = true
     setMessages([])
+    setIsLoadingHistory(true)
 
     function handleReceiveMessage(payload: ReceivedMessage) {
       if (payload.channelId !== channelId) {
@@ -35,12 +48,9 @@ function ChatArea({ channelId, channelName, localUserId }: ChatAreaProps) {
         {
           id: payload.messageId,
           channelId: payload.channelId,
-          author: payload.authorId === localUserId ? 'Você' : payload.authorId,
+          author: payload.authorId === localUserId ? 'Você' : payload.authorUsername,
           content: payload.content,
-          sentAt: new Date(payload.sentAt).toLocaleTimeString('pt-BR', {
-            hour: '2-digit',
-            minute: '2-digit',
-          }),
+          sentAt: formatTime(payload.sentAt),
         },
       ])
     }
@@ -50,6 +60,39 @@ function ChatArea({ channelId, channelName, localUserId }: ChatAreaProps) {
         setError(reasons.join(' '))
       }
     }
+
+    getChannelMessages(channelId)
+      .then((history) => {
+        if (!active) {
+          return
+        }
+
+        const historyMessages: Message[] = history.map((item) => ({
+          id: item.id,
+          channelId,
+          author: item.authorId === localUserId ? 'Você' : item.authorUsername,
+          content: item.content,
+          sentAt: formatTime(item.sentAt),
+        }))
+
+        // Mensagens que já chegaram ao vivo enquanto o histórico carregava não
+        // devem ser duplicadas.
+        setMessages((current) => {
+          const historyIds = new Set(historyMessages.map((m) => m.id))
+          const liveOnly = current.filter((m) => !historyIds.has(m.id))
+          return [...historyMessages, ...liveOnly]
+        })
+      })
+      .catch((err) => {
+        if (active) {
+          setError(err instanceof Error ? err.message : 'Falha ao carregar mensagens.')
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoadingHistory(false)
+        }
+      })
 
     ensureConnected()
       .then((hub) => {
@@ -94,13 +137,18 @@ function ChatArea({ channelId, channelName, localUserId }: ChatAreaProps) {
       </header>
 
       <div className="chat-messages">
-        {messages.map((message) => (
-          <div key={message.id} className="chat-message">
-            <span className="chat-message-author">{message.author}</span>
-            <span className="chat-message-time">{message.sentAt}</span>
-            <p className="chat-message-content">{message.content}</p>
-          </div>
-        ))}
+        {isLoadingHistory ? (
+          <p className="chat-loading">Carregando mensagens...</p>
+        ) : (
+          messages.map((message) => (
+            <div key={message.id} className="chat-message">
+              <span className="chat-message-author">{message.author}</span>
+              <span className="chat-message-time">{message.sentAt}</span>
+              <p className="chat-message-content">{message.content}</p>
+            </div>
+          ))
+        )}
+        <div ref={messagesEndRef} />
       </div>
 
       {error && <div className="chat-error">{error}</div>}

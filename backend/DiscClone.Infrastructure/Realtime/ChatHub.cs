@@ -37,6 +37,7 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
             MessageId = result.Value,
             ChannelId = channelId,
             AuthorId = authorId,
+            AuthorUsername = GetUsername(),
             Content = content,
             SentAt = DateTime.UtcNow
         });
