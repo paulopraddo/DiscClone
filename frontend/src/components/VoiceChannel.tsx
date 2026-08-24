@@ -1,295 +1,180 @@
-import { useEffect, useRef, useState } from 'react'
-import type { MediaConnection } from 'peerjs'
-import {
-  ensureConnected,
-  joinVoiceChannel,
-  leaveVoiceChannel,
-  onVoiceRejoin,
-  startVoiceScreenShare,
-  stopVoiceScreenShare,
-  type VoiceParticipant,
-} from '../services/chatHub'
-import { callPeer, onIncomingCall } from '../services/peer'
-import { usePeerId } from '../hooks/usePeerId'
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useVoiceCall } from '../contexts/VoiceCallContext'
 
 interface VoiceChannelProps {
+  serverId: string
   channelId: string
   channelName: string
   localUserId: string
+  localUsername: string
 }
 
-interface RemoteScreenShare {
-  authorId: string
-  stream: MediaStream
+const AVATAR_COLORS = ['#5865f2', '#3ba55d', '#faa61a', '#ed4245', '#eb459e', '#00a8fc', '#f47b67']
+
+function getInitials(name: string) {
+  return name.trim().slice(0, 2).toUpperCase() || '?'
 }
 
-function VoiceChannel({ channelId, channelName, localUserId }: VoiceChannelProps) {
-  const { peerId } = usePeerId()
-  const [isJoined, setIsJoined] = useState(false)
-  const [participants, setParticipants] = useState<VoiceParticipant[]>([])
-  const [isSharingScreen, setIsSharingScreen] = useState(false)
-  const [remoteScreenShare, setRemoteScreenShare] = useState<RemoteScreenShare | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  const localStreamRef = useRef<MediaStream | null>(null)
-  const callsRef = useRef<Map<string, MediaConnection>>(new Map())
-  const audioElementsRef = useRef<Map<string, HTMLAudioElement>>(new Map())
-  const usernamesRef = useRef<Map<string, string>>(new Map())
-
-  const screenStreamRef = useRef<MediaStream | null>(null)
-  const screenCallsRef = useRef<Map<string, MediaConnection>>(new Map())
-  const localVideoRef = useRef<HTMLVideoElement>(null)
-  const remoteVideoRef = useRef<HTMLVideoElement>(null)
-
-  function attachRemoteStream(remotePeerId: string, stream: MediaStream) {
-    let audio = audioElementsRef.current.get(remotePeerId)
-
-    if (!audio) {
-      audio = new Audio()
-      audio.autoplay = true
-      audioElementsRef.current.set(remotePeerId, audio)
-    }
-
-    audio.srcObject = stream
-
-    const username = usernamesRef.current.get(remotePeerId) ?? remotePeerId
-    setParticipants((current) =>
-      current.some((p) => p.peerId === remotePeerId) ? current : [...current, { peerId: remotePeerId, username }],
-    )
+function getAvatarColor(seed: string) {
+  let hash = 0
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = seed.charCodeAt(i) + ((hash << 5) - hash)
   }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
 
-  function removeParticipant(remotePeerId: string) {
-    callsRef.current.get(remotePeerId)?.close()
-    callsRef.current.delete(remotePeerId)
-    audioElementsRef.current.get(remotePeerId)?.pause()
-    audioElementsRef.current.delete(remotePeerId)
-    usernamesRef.current.delete(remotePeerId)
-    setParticipants((current) => current.filter((p) => p.peerId !== remotePeerId))
-  }
+function MicIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="2" width="6" height="11" rx="3" />
+      <path d="M5 10a7 7 0 0 0 14 0" />
+      <line x1="12" y1="19" x2="12" y2="22" />
+    </svg>
+  )
+}
 
-  async function connectToParticipants(stream: MediaStream, newParticipants: VoiceParticipant[]) {
-    for (const participant of newParticipants) {
-      usernamesRef.current.set(participant.peerId, participant.username)
+function MicOffIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 6.51V5a3 3 0 0 0-5.94-.6" />
+      <path d="M5 10a7 7 0 0 0 10.29 6.17" />
+      <path d="M17.9 12.9A7 7 0 0 0 19 10" />
+      <line x1="12" y1="19" x2="12" y2="22" />
+      <line x1="2" y1="2" x2="22" y2="22" />
+    </svg>
+  )
+}
 
-      if (callsRef.current.has(participant.peerId)) {
-        continue
-      }
+function HangupIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+      <path d="M12 9c-2.5 0-4.8.6-6.9 1.6a1 1 0 0 0-.5 1.2l1 3a1 1 0 0 0 1.2.6c1-.3 2-.5 3.2-.5v-2.3c0-.4.3-.8.7-.9.7-.2 1.5-.3 2.3-.3s1.6.1 2.3.3c.4.1.7.5.7.9v2.3c1.2 0 2.2.2 3.2.5a1 1 0 0 0 1.2-.6l1-3a1 1 0 0 0-.5-1.2C16.8 9.6 14.5 9 12 9z" />
+    </svg>
+  )
+}
 
-      try {
-        const call = await callPeer(participant.peerId, stream, { type: 'voice' })
-        callsRef.current.set(participant.peerId, call)
-        call.on('stream', (remoteStream) => attachRemoteStream(participant.peerId, remoteStream))
-        call.on('close', () => removeParticipant(participant.peerId))
-      } catch {
-        // ignora falha ao conectar a um participante especifico
-      }
-    }
-  }
+function ScreenShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="20" height="14" rx="2" />
+      <line x1="8" y1="21" x2="16" y2="21" />
+      <line x1="12" y1="17" x2="12" y2="21" />
+      <path d="M9.5 10.5 12 8l2.5 2.5" />
+      <line x1="12" y1="8" x2="12" y2="13" />
+    </svg>
+  )
+}
 
-  // Quem compartilha a tela liga diretamente para cada participante com o
-  // stream real (em vez de esperar que o participante ligue com um stream
-  // vazio) — WebRTC não permite adicionar uma faixa de video numa resposta
-  // que nao existia na oferta original, entao a direcao da chamada importa.
-  function callParticipantWithScreen(remotePeerId: string, stream: MediaStream) {
-    callPeer(remotePeerId, stream, { type: 'screen', authorId: localUserId })
-      .then((call) => screenCallsRef.current.set(remotePeerId, call))
-      .catch(() => undefined)
+function VoiceChannel({ serverId, channelId, channelName, localUserId, localUsername }: VoiceChannelProps) {
+  const {
+    isJoined,
+    isConnecting,
+    isMuted,
+    isSharingScreen,
+    participants,
+    remoteScreenShare,
+    localScreenStream,
+    error,
+    localVideoRef,
+    remoteVideoRef,
+    joinChannel,
+    leaveCall,
+    toggleMute,
+    startScreenShare,
+    stopScreenShare,
+  } = useVoiceCall()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    joinChannel(serverId, channelId, channelName)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverId, channelId, channelName])
+
+  function handleHangup() {
+    leaveCall()
+    navigate(`/servers/${serverId}`)
   }
 
   useEffect(() => {
-    const offIncomingCall = onIncomingCall((call) => {
-      const metadata = call.metadata as { type?: string; authorId?: string } | undefined
-
-      if (metadata?.type === 'voice') {
-        call.answer(localStreamRef.current ?? undefined)
-        callsRef.current.set(call.peer, call)
-        call.on('stream', (remoteStream) => attachRemoteStream(call.peer, remoteStream))
-        call.on('close', () => removeParticipant(call.peer))
-        return
-      }
-
-      if (metadata?.type === 'screen') {
-        call.answer()
-        call.on('stream', (remoteStream) => {
-          setRemoteScreenShare({ authorId: metadata.authorId ?? call.peer, stream: remoteStream })
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = remoteStream
-          }
-        })
-        call.on('close', () => setRemoteScreenShare(null))
-      }
-    })
-
-    function handleParticipantJoined(payload: VoiceParticipant) {
-      usernamesRef.current.set(payload.peerId, payload.username)
-
-      if (screenStreamRef.current) {
-        callParticipantWithScreen(payload.peerId, screenStreamRef.current)
-      }
+    if (localVideoRef.current && localScreenStream) {
+      localVideoRef.current.srcObject = localScreenStream
     }
+  }, [localScreenStream, localVideoRef])
 
-    function handleParticipantLeft(payload: { peerId: string }) {
-      removeParticipant(payload.peerId)
-      screenCallsRef.current.get(payload.peerId)?.close()
-      screenCallsRef.current.delete(payload.peerId)
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteScreenShare) {
+      remoteVideoRef.current.srcObject = remoteScreenShare.stream
     }
-
-    function handleScreenShareStopped(payload: { authorId: string }) {
-      setRemoteScreenShare((current) => (current?.authorId === payload.authorId ? null : current))
-    }
-
-    ensureConnected().then((hub) => {
-      hub.on('VoiceParticipantJoined', handleParticipantJoined)
-      hub.on('VoiceParticipantLeft', handleParticipantLeft)
-      hub.on('ScreenShareStopped', handleScreenShareStopped)
-    })
-
-    // Se a conexao SignalR cair e reconectar, o servidor perde o registro de
-    // que estavamos na sala de voz. Ao reconectar, reentramos e reconectamos
-    // (via PeerJS) a qualquer participante novo que tenha entrado nesse meio tempo.
-    onVoiceRejoin((state) => {
-      if (localStreamRef.current) {
-        connectToParticipants(localStreamRef.current, state.participants)
-      }
-
-      if (screenStreamRef.current) {
-        for (const participant of state.participants) {
-          if (!screenCallsRef.current.has(participant.peerId)) {
-            callParticipantWithScreen(participant.peerId, screenStreamRef.current)
-          }
-        }
-      }
-    })
-
-    return () => {
-      offIncomingCall()
-      onVoiceRejoin(null)
-      ensureConnected().then((hub) => {
-        hub.off('VoiceParticipantJoined', handleParticipantJoined)
-        hub.off('VoiceParticipantLeft', handleParticipantLeft)
-        hub.off('ScreenShareStopped', handleScreenShareStopped)
-      })
-    }
-  }, [channelId])
-
-  async function handleJoin() {
-    if (!peerId) {
-      return
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      localStreamRef.current = stream
-
-      const state = await joinVoiceChannel(channelId, peerId)
-      await connectToParticipants(stream, state.participants)
-
-      setIsJoined(true)
-      setError(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao entrar no canal de voz.')
-    }
-  }
-
-  function handleLeave() {
-    localStreamRef.current?.getTracks().forEach((track) => track.stop())
-    localStreamRef.current = null
-
-    callsRef.current.forEach((call) => call.close())
-    callsRef.current.clear()
-    audioElementsRef.current.clear()
-    usernamesRef.current.clear()
-
-    stopSharingScreen()
-
-    setParticipants([])
-    setIsJoined(false)
-    leaveVoiceChannel(channelId).catch(() => undefined)
-  }
-
-  async function handleStartSharingScreen() {
-    if (!peerId) {
-      return
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true })
-      screenStreamRef.current = stream
-
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream
-      }
-
-      stream.getVideoTracks()[0].addEventListener('ended', stopSharingScreen)
-
-      for (const participant of participants) {
-        callParticipantWithScreen(participant.peerId, stream)
-      }
-
-      setIsSharingScreen(true)
-      setError(null)
-      await startVoiceScreenShare(channelId, peerId)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao iniciar o compartilhamento de tela.')
-    }
-  }
-
-  function stopSharingScreen() {
-    screenStreamRef.current?.getTracks().forEach((track) => track.stop())
-    screenStreamRef.current = null
-
-    screenCallsRef.current.forEach((call) => call.close())
-    screenCallsRef.current.clear()
-
-    setIsSharingScreen(false)
-    stopVoiceScreenShare(channelId).catch(() => undefined)
-  }
+  }, [remoteScreenShare, remoteVideoRef])
 
   return (
-    <div className="voice-channel">
-      <h2 className="voice-channel-title">🔊 {channelName}</h2>
-
-      <button type="button" onClick={isJoined ? handleLeave : handleJoin} disabled={!peerId}>
-        {isJoined ? 'Sair do canal de voz' : 'Entrar no canal de voz'}
-      </button>
+    <div className="voice-fullscreen">
+      <header className="voice-fullscreen-header">
+        <span>🔊 {channelName}</span>
+      </header>
 
       {error && <div className="chat-error">{error}</div>}
 
-      {isJoined && (
-        <>
-          <ul className="voice-participants">
-            <li>Você</li>
-            {participants.map((participant) => (
-              <li key={participant.peerId}>{participant.username}</li>
-            ))}
-          </ul>
+      {(isSharingScreen || remoteScreenShare) && (
+        <div className="voice-screen-preview">
+          <video ref={localVideoRef} className="screen-share-video" autoPlay playsInline muted hidden={!isSharingScreen} />
+          <video ref={remoteVideoRef} className="screen-share-video" autoPlay playsInline hidden={!remoteScreenShare} />
+        </div>
+      )}
 
-          <div className="screen-share">
-            <div className="screen-share-controls">
-              <button type="button" onClick={isSharingScreen ? stopSharingScreen : handleStartSharingScreen}>
-                {isSharingScreen ? 'Parar compartilhamento' : 'Compartilhar tela'}
-              </button>
-            </div>
-
-            <div className="screen-share-videos">
-              <video
-                ref={localVideoRef}
-                className="screen-share-video"
-                autoPlay
-                playsInline
-                muted
-                hidden={!isSharingScreen}
-              />
-              <video
-                ref={remoteVideoRef}
-                className="screen-share-video"
-                autoPlay
-                playsInline
-                hidden={!remoteScreenShare}
-              />
-            </div>
+      <div className="voice-grid">
+        {isJoined && (
+          <div className="voice-tile">
+            <span className="voice-avatar-lg" style={{ background: getAvatarColor(localUserId) }}>
+              {getInitials(localUsername)}
+            </span>
+            <span className="voice-tile-name">{localUsername}</span>
           </div>
-        </>
+        )}
+        {participants.map((participant) => (
+          <div className="voice-tile" key={participant.peerId}>
+            <span className="voice-avatar-lg" style={{ background: getAvatarColor(participant.peerId) }}>
+              {getInitials(participant.username)}
+            </span>
+            <span className="voice-tile-name">{participant.username}</span>
+          </div>
+        ))}
+        {!isJoined && isConnecting && <p className="voice-connecting">Conectando...</p>}
+      </div>
+
+      {isJoined && (
+        <div className="voice-controls">
+          <button
+            type="button"
+            className={`voice-control-btn${isMuted ? ' active-warning' : ''}`}
+            onClick={toggleMute}
+            title={isMuted ? 'Ativar microfone' : 'Mutar microfone'}
+            aria-label={isMuted ? 'Ativar microfone' : 'Mutar microfone'}
+          >
+            {isMuted ? <MicOffIcon /> : <MicIcon />}
+          </button>
+
+          <button
+            type="button"
+            className="voice-control-btn leave"
+            onClick={handleHangup}
+            title="Sair da call"
+            aria-label="Sair da call"
+          >
+            <HangupIcon />
+          </button>
+
+          <button
+            type="button"
+            className={`voice-control-btn${isSharingScreen ? ' active' : ''}`}
+            onClick={isSharingScreen ? stopScreenShare : startScreenShare}
+            title="Compartilhar tela"
+            aria-label="Compartilhar tela"
+          >
+            <ScreenShareIcon />
+          </button>
+        </div>
       )}
     </div>
   )

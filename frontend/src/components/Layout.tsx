@@ -2,7 +2,9 @@ import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { ServersProvider } from '../contexts/ServersContext'
 import { MobileNavProvider, useMobileNav } from '../contexts/MobileNavContext'
+import { VoiceCallProvider } from '../contexts/VoiceCallContext'
 import ServerRail from './ServerRail'
+import VoiceCallStatusBar from './VoiceCallStatusBar'
 
 function LayoutContent() {
   const { isDrawerOpen, closeDrawer, toggleDrawer } = useMobileNav()
@@ -25,6 +27,7 @@ function LayoutContent() {
 
       <ServerRail />
       <Outlet />
+      <VoiceCallStatusBar />
     </div>
   )
 }
@@ -33,7 +36,9 @@ function Layout() {
   return (
     <ServersProvider>
       <MobileNavProvider>
-        <LayoutContent />
+        <VoiceCallProvider>
+          <LayoutContent />
+        </VoiceCallProvider>
       </MobileNavProvider>
     </ServersProvider>
   )

@@ -15,10 +15,18 @@ function ChannelPage() {
     <>
       <ChannelList serverId={serverId!} />
       <div className="channel-main">
-        {channel?.type === 'voice' && (
-          <VoiceChannel channelId={channelId!} channelName={channel.name} localUserId={user!.userId} />
+        {channel?.type === 'voice' ? (
+          <VoiceChannel
+            key={channelId}
+            serverId={serverId!}
+            channelId={channelId!}
+            channelName={channel.name}
+            localUserId={user!.userId}
+            localUsername={user!.username}
+          />
+        ) : (
+          <ChatArea channelId={channelId!} channelName={channel?.name ?? ''} localUserId={user!.userId} />
         )}
-        <ChatArea channelId={channelId!} channelName={channel?.name ?? ''} localUserId={user!.userId} />
       </div>
     </>
   )
