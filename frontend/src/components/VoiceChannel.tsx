@@ -72,6 +72,7 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
     isConnecting,
     isMuted,
     isSharingScreen,
+    isScreenShareSupported,
     participants,
     remoteScreenSharer,
     remoteScreenShare,
@@ -226,7 +227,8 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
             type="button"
             className={`voice-control-btn${isSharingScreen ? ' active' : ''}`}
             onClick={isSharingScreen ? stopScreenShare : startScreenShare}
-            title="Compartilhar tela"
+            disabled={!isSharingScreen && !isScreenShareSupported}
+            title={isScreenShareSupported ? 'Compartilhar tela' : 'Compartilhamento de tela não é suportado neste dispositivo'}
             aria-label="Compartilhar tela"
           >
             <ScreenShareIcon />

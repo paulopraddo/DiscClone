@@ -44,6 +44,7 @@ interface VoiceCallContextValue {
   isConnecting: boolean
   isMuted: boolean
   isSharingScreen: boolean
+  isScreenShareSupported: boolean
   participants: VoiceParticipant[]
   remoteScreenSharer: RemoteScreenSharer | null
   remoteScreenShare: RemoteScreenShare | null
@@ -62,6 +63,11 @@ interface VoiceCallContextValue {
 }
 
 const VoiceCallContext = createContext<VoiceCallContextValue | undefined>(undefined)
+
+// A maioria dos navegadores mobile (Safari iOS, Chrome Android) ainda não
+// implementa captura de tela via getDisplayMedia na web.
+const isScreenShareSupported =
+  typeof navigator !== 'undefined' && typeof navigator.mediaDevices?.getDisplayMedia === 'function'
 
 export function VoiceCallProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
@@ -354,6 +360,11 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
       return
     }
 
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      setError('Compartilhamento de tela não é suportado neste navegador/dispositivo.')
+      return
+    }
+
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
@@ -408,6 +419,7 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
     isConnecting,
     isMuted,
     isSharingScreen,
+    isScreenShareSupported,
     participants,
     remoteScreenSharer,
     remoteScreenShare,
