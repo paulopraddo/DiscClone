@@ -1,3 +1,4 @@
+using DiscClone.API;
 using DiscClone.Application;
 using DiscClone.Infrastructure;
 using DiscClone.Infrastructure.Persistence;
@@ -21,6 +22,8 @@ if (!string.IsNullOrEmpty(port))
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCorsPolicy, policy => policy
@@ -47,6 +50,8 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.UseExceptionHandler();
 
 // Railway/Fly/Render terminam o HTTPS num proxy na frente do container; sem
 // isso, UseHttpsRedirection nao reconhece a requisicao original como https.

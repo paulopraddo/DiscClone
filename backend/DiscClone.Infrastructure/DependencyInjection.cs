@@ -10,6 +10,7 @@ using DiscClone.Infrastructure.Persistence.Repositories;
 using DiscClone.Infrastructure.Realtime;
 using DiscClone.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,7 +37,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
 
-        services.AddSignalR();
+        services.AddSignalR(options => options.AddFilter<HubExceptionFilter>());
         services.AddSingleton<VoiceRoomRegistry>();
 
         services.AddJwtAuthentication(configuration);
