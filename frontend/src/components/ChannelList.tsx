@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useServers } from '../contexts/ServersContext'
 
@@ -15,6 +15,39 @@ function ChannelList({ serverId }: ChannelListProps) {
   const [type, setType] = useState<'text' | 'voice'>('text')
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  function cancelCreate() {
+    setIsCreating(false)
+    setName('')
+    setError(null)
+  }
+
+  useEffect(() => {
+    if (!isCreating) {
+      return
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        cancelCreate()
+      }
+    }
+
+    function handleClickOutside(event: MouseEvent) {
+      if (formRef.current && !formRef.current.contains(event.target as Node)) {
+        cancelCreate()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('mousedown', handleClickOutside)
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isCreating])
 
   async function handleCopyInvite() {
     try {
@@ -63,7 +96,13 @@ function ChannelList({ serverId }: ChannelListProps) {
       </ul>
 
       {isCreating ? (
-        <form className="create-channel-form" onSubmit={handleCreateChannel}>
+        <form className="create-channel-form" onSubmit={handleCreateChannel} ref={formRef}>
+          <div className="panel-form-header">
+            <span>Criar canal</span>
+            <button type="button" className="panel-close-button" onClick={cancelCreate} aria-label="Fechar">
+              ✕
+            </button>
+          </div>
           <input
             type="text"
             placeholder="Nome do canal"
