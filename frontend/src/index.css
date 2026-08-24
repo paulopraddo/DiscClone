@@ -478,6 +478,27 @@ body {
   font-size: 14px;
 }
 
+.voice-error {
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.voice-error button {
+  flex-shrink: 0;
+  background: #f23f42;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .chat-input {
   padding: 0 16px 24px;
 }

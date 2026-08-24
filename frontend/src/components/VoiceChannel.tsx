@@ -69,6 +69,7 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
     localVideoRef,
     remoteVideoRef,
     joinChannel,
+    retryJoin,
     leaveCall,
     toggleMute,
     startScreenShare,
@@ -110,7 +111,14 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
         <span>🔊 {channelName}</span>
       </header>
 
-      {error && <div className="chat-error">{error}</div>}
+      {error && (
+        <div className="chat-error voice-error">
+          <span>{error}</span>
+          <button type="button" onClick={retryJoin}>
+            Tentar novamente
+          </button>
+        </div>
+      )}
 
       {remoteScreenSharer && !isViewingRemoteScreen && (
         <div className="voice-share-prompt">

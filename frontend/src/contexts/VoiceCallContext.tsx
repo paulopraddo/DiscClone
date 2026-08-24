@@ -20,7 +20,11 @@ import {
 } from '../services/chatHub'
 import { callPeer, onIncomingCall } from '../services/peer'
 import { usePeerId } from '../hooks/usePeerId'
+import { withTimeout } from '../lib/withTimeout'
 import { useAuth } from './AuthContext'
+
+const MEDIA_TIMEOUT_MS = 15000
+const JOIN_TIMEOUT_MS = 15000
 
 interface RemoteScreenShare {
   authorId: string
@@ -54,6 +58,7 @@ interface VoiceCallContextValue {
   localVideoRef: RefObject<HTMLVideoElement | null>
   remoteVideoRef: RefObject<HTMLVideoElement | null>
   joinChannel: (serverId: string, channelId: string, channelName: string) => void
+  retryJoin: () => void
   leaveCall: () => void
   toggleMute: () => void
   startScreenShare: () => Promise<void>
@@ -71,9 +76,10 @@ const isScreenShareSupported =
 
 export function VoiceCallProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
-  const { peerId } = usePeerId()
+  const { peerId, error: peerError, retry: retryPeer } = usePeerId()
 
   const [active, setActive] = useState<ActiveVoiceChannel | null>(null)
+  const [retryToken, setRetryToken] = useState(0)
   const [isJoined, setIsJoined] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
@@ -284,14 +290,28 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
     }
   }, [attachRemoteStream, removeParticipant, connectToParticipants, callParticipantWithScreen])
 
+  // Se a conexao com o servico de voz (PeerJS) falhar ou travar, mostra o erro
+  // em vez de deixar a tela presa em "Conectando..." para sempre.
+  useEffect(() => {
+    if (peerError && active && !isJoined) {
+      setError(peerError)
+      setIsConnecting(false)
+    }
+  }, [peerError, active, isJoined])
+
   // Conecta (ou troca) ao canal de voz desejado. So roda de novo quando o
-  // canal desejado ou o peerId mudam — navegar para um canal de texto nao
-  // altera `active`, entao a chamada continua ativa em segundo plano.
+  // canal desejado, o peerId ou retryToken mudam — navegar para um canal de
+  // texto nao altera `active`, entao a chamada continua ativa em segundo plano.
   useEffect(() => {
     let cancelled = false
 
     async function run() {
-      if (!active || !peerId || connectedChannelIdRef.current === active.channelId) {
+      if (!active || connectedChannelIdRef.current === active.channelId) {
+        return
+      }
+
+      if (!peerId) {
+        // Ainda conectando ao PeerJS (ou falhou — o efeito acima ja cobre o erro).
         return
       }
 
@@ -306,7 +326,11 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
       setError(null)
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        const stream = await withTimeout(
+          navigator.mediaDevices.getUserMedia({ audio: true }),
+          MEDIA_TIMEOUT_MS,
+          'Não foi possível acessar o microfone. Verifique a permissão do navegador e tente novamente.',
+        )
 
         if (cancelled) {
           stream.getTracks().forEach((track) => track.stop())
@@ -314,7 +338,11 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
         }
 
         localStreamRef.current = stream
-        const state = await joinVoiceChannel(active.channelId, peerId)
+        const state = await withTimeout(
+          joinVoiceChannel(active.channelId, peerId),
+          JOIN_TIMEOUT_MS,
+          'Não foi possível entrar no canal de voz. Verifique sua conexão e tente novamente.',
+        )
 
         if (cancelled) {
           return
@@ -326,6 +354,8 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Falha ao entrar no canal de voz.')
+          localStreamRef.current?.getTracks().forEach((track) => track.stop())
+          localStreamRef.current = null
         }
       } finally {
         if (!cancelled) {
@@ -339,11 +369,21 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [active, peerId, connectToParticipants, teardownCallState])
+  }, [active, peerId, retryToken, connectToParticipants, teardownCallState])
 
   const joinChannel = useCallback((serverId: string, channelId: string, channelName: string) => {
     setActive((current) => (current?.channelId === channelId ? current : { serverId, channelId, channelName }))
   }, [])
+
+  const retryJoin = useCallback(() => {
+    setError(null)
+
+    if (!peerId) {
+      retryPeer()
+    }
+
+    setRetryToken((current) => current + 1)
+  }, [peerId, retryPeer])
 
   const leaveCall = useCallback(() => {
     const channelId = connectedChannelIdRef.current ?? active?.channelId ?? null
@@ -441,6 +481,7 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
     localVideoRef,
     remoteVideoRef,
     joinChannel,
+    retryJoin,
     leaveCall,
     toggleMute,
     startScreenShare,
