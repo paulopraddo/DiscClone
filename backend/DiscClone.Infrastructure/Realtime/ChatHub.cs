@@ -46,6 +46,7 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
     public Task StartVoiceScreenShare(Guid channelId, string peerId) =>
         Clients.OthersInGroup(GetVoiceGroupName(channelId)).SendAsync("ScreenShareStarted", new
         {
+            ChannelId = channelId,
             AuthorId = GetUserId(),
             PeerId = peerId
         });
@@ -53,6 +54,7 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
     public Task StopVoiceScreenShare(Guid channelId) =>
         Clients.OthersInGroup(GetVoiceGroupName(channelId)).SendAsync("ScreenShareStopped", new
         {
+            ChannelId = channelId,
             AuthorId = GetUserId()
         });
 
@@ -66,11 +68,35 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, GetVoiceGroupName(channelId));
         await Clients.OthersInGroup(GetVoiceGroupName(channelId)).SendAsync("VoiceParticipantJoined", new
         {
+            ChannelId = channelId,
             PeerId = peerId,
             Username = username
         });
 
         return new VoiceChannelState(existingPeers);
+    }
+
+    /// <summary>
+    /// Entra no grupo de um canal de voz só para observar quem está lá (sem registrar o
+    /// caller como participante), usado para mostrar os participantes antes de entrar de fato.
+    /// </summary>
+    public async Task<VoiceChannelState> WatchVoiceChannel(Guid channelId)
+    {
+        await EnsureCanAccessChannel(channelId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, GetVoiceGroupName(channelId));
+        return new VoiceChannelState(voiceRooms.Peek(channelId));
+    }
+
+    public Task UnwatchVoiceChannel(Guid channelId)
+    {
+        // Quem está de fato na call continua precisando do grupo para receber os eventos
+        // dela — só remove do grupo quem estava apenas observando.
+        if (voiceRooms.IsParticipant(Context.ConnectionId, channelId))
+        {
+            return Task.CompletedTask;
+        }
+
+        return Groups.RemoveFromGroupAsync(Context.ConnectionId, GetVoiceGroupName(channelId));
     }
 
     public async Task LeaveVoiceChannel(Guid channelId)
@@ -113,8 +139,8 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
         var authorId = GetUserId();
 
         return Task.WhenAll(
-            Clients.OthersInGroup(voiceGroup).SendAsync("VoiceParticipantLeft", new { PeerId = peerId }),
-            Clients.OthersInGroup(voiceGroup).SendAsync("ScreenShareStopped", new { AuthorId = authorId }));
+            Clients.OthersInGroup(voiceGroup).SendAsync("VoiceParticipantLeft", new { ChannelId = channelId, PeerId = peerId }),
+            Clients.OthersInGroup(voiceGroup).SendAsync("ScreenShareStopped", new { ChannelId = channelId, AuthorId = authorId }));
     }
 
     private Guid GetUserId() =>

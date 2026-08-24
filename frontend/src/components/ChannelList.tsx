@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useServers } from '../contexts/ServersContext'
+import { getAvatarColor, getInitials } from '../lib/avatar'
+import { ensureConnected, unwatchVoiceChannel, watchVoiceChannel, type VoiceParticipant } from '../services/chatHub'
 
 interface ChannelListProps {
   serverId: string
@@ -15,7 +17,83 @@ function ChannelList({ serverId }: ChannelListProps) {
   const [type, setType] = useState<'text' | 'voice'>('text')
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [voiceParticipants, setVoiceParticipants] = useState<Record<string, VoiceParticipant[]>>({})
   const formRef = useRef<HTMLFormElement>(null)
+
+  const voiceChannelIdsKey = (server?.channels ?? [])
+    .filter((channel) => channel.type === 'voice')
+    .map((channel) => channel.id)
+    .join(',')
+
+  // Observa (sem entrar) todos os canais de voz do servidor para mostrar quem
+  // está em cada um antes do usuário decidir se quer entrar na call.
+  useEffect(() => {
+    const ids = voiceChannelIdsKey ? voiceChannelIdsKey.split(',') : []
+
+    if (ids.length === 0) {
+      setVoiceParticipants({})
+      return
+    }
+
+    let isActive = true
+
+    function handleJoined(payload: VoiceParticipant & { channelId: string }) {
+      if (!ids.includes(payload.channelId)) {
+        return
+      }
+
+      setVoiceParticipants((current) => {
+        const list = current[payload.channelId] ?? []
+
+        if (list.some((p) => p.peerId === payload.peerId)) {
+          return current
+        }
+
+        return { ...current, [payload.channelId]: [...list, { peerId: payload.peerId, username: payload.username }] }
+      })
+    }
+
+    function handleLeft(payload: { channelId: string; peerId: string }) {
+      setVoiceParticipants((current) => {
+        const list = current[payload.channelId]
+
+        if (!list) {
+          return current
+        }
+
+        return { ...current, [payload.channelId]: list.filter((p) => p.peerId !== payload.peerId) }
+      })
+    }
+
+    ensureConnected().then(async (hub) => {
+      hub.on('VoiceParticipantJoined', handleJoined)
+      hub.on('VoiceParticipantLeft', handleLeft)
+
+      const entries = await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const state = await watchVoiceChannel(id)
+            return [id, state.participants] as const
+          } catch {
+            return [id, []] as const
+          }
+        }),
+      )
+
+      if (isActive) {
+        setVoiceParticipants(Object.fromEntries(entries))
+      }
+    })
+
+    return () => {
+      isActive = false
+      ids.forEach((id) => unwatchVoiceChannel(id).catch(() => undefined))
+      ensureConnected().then((hub) => {
+        hub.off('VoiceParticipantJoined', handleJoined)
+        hub.off('VoiceParticipantLeft', handleLeft)
+      })
+    }
+  }, [voiceChannelIdsKey])
 
   function cancelCreate() {
     setIsCreating(false)
@@ -91,6 +169,19 @@ function ChannelList({ serverId }: ChannelListProps) {
             >
               {channel.type === 'text' ? '#' : '🔊'} {channel.name}
             </NavLink>
+
+            {channel.type === 'voice' && (voiceParticipants[channel.id]?.length ?? 0) > 0 && (
+              <ul className="voice-channel-members">
+                {voiceParticipants[channel.id].map((participant) => (
+                  <li key={participant.peerId} className="voice-channel-member">
+                    <span className="voice-avatar-xs" style={{ background: getAvatarColor(participant.peerId) }}>
+                      {getInitials(participant.username)}
+                    </span>
+                    <span className="voice-channel-member-name">{participant.username}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </li>
         ))}
       </ul>

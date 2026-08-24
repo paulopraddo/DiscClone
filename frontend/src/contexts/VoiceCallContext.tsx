@@ -220,7 +220,11 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
       }
     })
 
-    function handleParticipantJoined(payload: VoiceParticipant) {
+    function handleParticipantJoined(payload: VoiceParticipant & { channelId: string }) {
+      if (payload.channelId !== connectedChannelIdRef.current) {
+        return
+      }
+
       usernamesRef.current.set(payload.peerId, payload.username)
 
       if (screenStreamRef.current) {
@@ -228,13 +232,21 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    function handleParticipantLeft(payload: { peerId: string }) {
+    function handleParticipantLeft(payload: { channelId: string; peerId: string }) {
+      if (payload.channelId !== connectedChannelIdRef.current) {
+        return
+      }
+
       removeParticipant(payload.peerId)
       screenCallsRef.current.get(payload.peerId)?.close()
       screenCallsRef.current.delete(payload.peerId)
     }
 
-    function handleScreenShareStopped(payload: { authorId: string }) {
+    function handleScreenShareStopped(payload: { channelId: string; authorId: string }) {
+      if (payload.channelId !== connectedChannelIdRef.current) {
+        return
+      }
+
       setRemoteScreenShare((current) => (current?.authorId === payload.authorId ? null : current))
       setRemoteScreenSharer((current) => (current?.authorId === payload.authorId ? null : current))
       setIsViewingRemoteScreen(false)

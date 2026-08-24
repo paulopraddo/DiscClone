@@ -125,3 +125,15 @@ export async function stopVoiceScreenShare(channelId: string): Promise<void> {
   const hub = await ensureConnected()
   await hub.invoke('StopVoiceScreenShare', channelId)
 }
+
+/** Observa quem está num canal de voz sem entrar de fato na call. */
+export async function watchVoiceChannel(channelId: string): Promise<VoiceChannelState> {
+  const hub = await ensureConnected()
+  return hub.invoke<VoiceChannelState>('WatchVoiceChannel', channelId)
+}
+
+export async function unwatchVoiceChannel(channelId: string): Promise<void> {
+  if (connection?.state === HubConnectionState.Connected) {
+    await connection.invoke('UnwatchVoiceChannel', channelId)
+  }
+}
