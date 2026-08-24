@@ -73,7 +73,9 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
     isMuted,
     isSharingScreen,
     participants,
+    remoteScreenSharer,
     remoteScreenShare,
+    isViewingRemoteScreen,
     localScreenStream,
     error,
     localVideoRef,
@@ -83,6 +85,8 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
     toggleMute,
     startScreenShare,
     stopScreenShare,
+    viewRemoteScreen,
+    hideRemoteScreen,
   } = useVoiceCall()
   const navigate = useNavigate()
 
@@ -103,10 +107,14 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
   }, [localScreenStream, localVideoRef])
 
   useEffect(() => {
-    if (remoteVideoRef.current && remoteScreenShare) {
+    if (remoteVideoRef.current && remoteScreenShare && isViewingRemoteScreen) {
       remoteVideoRef.current.srcObject = remoteScreenShare.stream
     }
-  }, [remoteScreenShare, remoteVideoRef])
+  }, [remoteScreenShare, isViewingRemoteScreen, remoteVideoRef])
+
+  const showLocalStage = isSharingScreen && !!localScreenStream
+  const showRemoteStage = isViewingRemoteScreen && !!remoteScreenShare
+  const isStageMode = showLocalStage || showRemoteStage
 
   return (
     <div className="voice-fullscreen">
@@ -116,32 +124,81 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
 
       {error && <div className="chat-error">{error}</div>}
 
-      {(isSharingScreen || remoteScreenShare) && (
-        <div className="voice-screen-preview">
-          <video ref={localVideoRef} className="screen-share-video" autoPlay playsInline muted hidden={!isSharingScreen} />
-          <video ref={remoteVideoRef} className="screen-share-video" autoPlay playsInline hidden={!remoteScreenShare} />
+      {remoteScreenSharer && !isViewingRemoteScreen && (
+        <div className="voice-share-prompt">
+          <span>🖥️ {remoteScreenSharer.username} está compartilhando a tela</span>
+          <button type="button" onClick={viewRemoteScreen}>
+            Assistir
+          </button>
         </div>
       )}
 
-      <div className="voice-grid">
-        {isJoined && (
-          <div className="voice-tile">
-            <span className="voice-avatar-lg" style={{ background: getAvatarColor(localUserId) }}>
-              {getInitials(localUsername)}
-            </span>
-            <span className="voice-tile-name">{localUsername}</span>
+      {isStageMode ? (
+        <div className="voice-stage">
+          <div className="voice-stage-videos">
+            {showLocalStage && (
+              <div className="voice-stage-video-box">
+                <video ref={localVideoRef} className="voice-stage-video" autoPlay playsInline muted />
+                <span className="voice-stage-video-label">Você (compartilhando)</span>
+              </div>
+            )}
+            {showRemoteStage && (
+              <div className="voice-stage-video-box">
+                <video ref={remoteVideoRef} className="voice-stage-video" autoPlay playsInline />
+                <span className="voice-stage-video-label">{remoteScreenSharer?.username}</span>
+                <button
+                  type="button"
+                  className="voice-stage-hide"
+                  onClick={hideRemoteScreen}
+                  title="Ocultar tela compartilhada"
+                  aria-label="Ocultar tela compartilhada"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
-        )}
-        {participants.map((participant) => (
-          <div className="voice-tile" key={participant.peerId}>
-            <span className="voice-avatar-lg" style={{ background: getAvatarColor(participant.peerId) }}>
-              {getInitials(participant.username)}
-            </span>
-            <span className="voice-tile-name">{participant.username}</span>
+
+          <div className="voice-stage-participants">
+            {isJoined && (
+              <div className="voice-chip">
+                <span className="voice-avatar-sm" style={{ background: getAvatarColor(localUserId) }}>
+                  {getInitials(localUsername)}
+                </span>
+                <span className="voice-chip-name">{localUsername}</span>
+              </div>
+            )}
+            {participants.map((participant) => (
+              <div className="voice-chip" key={participant.peerId}>
+                <span className="voice-avatar-sm" style={{ background: getAvatarColor(participant.peerId) }}>
+                  {getInitials(participant.username)}
+                </span>
+                <span className="voice-chip-name">{participant.username}</span>
+              </div>
+            ))}
           </div>
-        ))}
-        {!isJoined && isConnecting && <p className="voice-connecting">Conectando...</p>}
-      </div>
+        </div>
+      ) : (
+        <div className="voice-grid">
+          {isJoined && (
+            <div className="voice-tile">
+              <span className="voice-avatar-lg" style={{ background: getAvatarColor(localUserId) }}>
+                {getInitials(localUsername)}
+              </span>
+              <span className="voice-tile-name">{localUsername}</span>
+            </div>
+          )}
+          {participants.map((participant) => (
+            <div className="voice-tile" key={participant.peerId}>
+              <span className="voice-avatar-lg" style={{ background: getAvatarColor(participant.peerId) }}>
+                {getInitials(participant.username)}
+              </span>
+              <span className="voice-tile-name">{participant.username}</span>
+            </div>
+          ))}
+          {!isJoined && isConnecting && <p className="voice-connecting">Conectando...</p>}
+        </div>
+      )}
 
       {isJoined && (
         <div className="voice-controls">

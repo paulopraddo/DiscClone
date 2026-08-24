@@ -27,6 +27,11 @@ interface RemoteScreenShare {
   stream: MediaStream
 }
 
+interface RemoteScreenSharer {
+  authorId: string
+  username: string
+}
+
 interface ActiveVoiceChannel {
   serverId: string
   channelId: string
@@ -40,7 +45,9 @@ interface VoiceCallContextValue {
   isMuted: boolean
   isSharingScreen: boolean
   participants: VoiceParticipant[]
+  remoteScreenSharer: RemoteScreenSharer | null
   remoteScreenShare: RemoteScreenShare | null
+  isViewingRemoteScreen: boolean
   localScreenStream: MediaStream | null
   error: string | null
   localVideoRef: RefObject<HTMLVideoElement | null>
@@ -50,6 +57,8 @@ interface VoiceCallContextValue {
   toggleMute: () => void
   startScreenShare: () => Promise<void>
   stopScreenShare: () => void
+  viewRemoteScreen: () => void
+  hideRemoteScreen: () => void
 }
 
 const VoiceCallContext = createContext<VoiceCallContextValue | undefined>(undefined)
@@ -64,7 +73,9 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
   const [isMuted, setIsMuted] = useState(false)
   const [isSharingScreen, setIsSharingScreen] = useState(false)
   const [participants, setParticipants] = useState<VoiceParticipant[]>([])
+  const [remoteScreenSharer, setRemoteScreenSharer] = useState<RemoteScreenSharer | null>(null)
   const [remoteScreenShare, setRemoteScreenShare] = useState<RemoteScreenShare | null>(null)
+  const [isViewingRemoteScreen, setIsViewingRemoteScreen] = useState(false)
   const [localScreenStream, setLocalScreenStream] = useState<MediaStream | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -76,6 +87,7 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
   const screenCallsRef = useRef<Map<string, MediaConnection>>(new Map())
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
+  const pendingScreenCallRef = useRef<MediaConnection | null>(null)
   const connectedChannelIdRef = useRef<string | null>(null)
   const localUserIdRef = useRef<string | null>(null)
 
@@ -155,6 +167,10 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
     audioElementsRef.current.clear()
     usernamesRef.current.clear()
     stopScreenShareInternal()
+    pendingScreenCallRef.current?.close()
+    pendingScreenCallRef.current = null
+    setRemoteScreenSharer(null)
+    setIsViewingRemoteScreen(false)
     setParticipants([])
     setIsJoined(false)
     setIsMuted(false)
@@ -175,14 +191,26 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
       }
 
       if (metadata?.type === 'screen') {
-        call.answer()
+        // Nao responde automaticamente: quem esta na call escolhe se quer
+        // assistir ou nao antes da gente estabelecer a conexao de video.
+        const authorId = metadata.authorId ?? call.peer
+        const username = usernamesRef.current.get(call.peer) ?? authorId
+        pendingScreenCallRef.current = call
+        setRemoteScreenSharer({ authorId, username })
+
         call.on('stream', (remoteStream) => {
-          setRemoteScreenShare({ authorId: metadata.authorId ?? call.peer, stream: remoteStream })
+          setRemoteScreenShare({ authorId, stream: remoteStream })
+          setIsViewingRemoteScreen(true)
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = remoteStream
           }
         })
-        call.on('close', () => setRemoteScreenShare(null))
+        call.on('close', () => {
+          pendingScreenCallRef.current = null
+          setRemoteScreenSharer(null)
+          setRemoteScreenShare(null)
+          setIsViewingRemoteScreen(false)
+        })
       }
     })
 
@@ -202,6 +230,9 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
 
     function handleScreenShareStopped(payload: { authorId: string }) {
       setRemoteScreenShare((current) => (current?.authorId === payload.authorId ? null : current))
+      setRemoteScreenSharer((current) => (current?.authorId === payload.authorId ? null : current))
+      setIsViewingRemoteScreen(false)
+      pendingScreenCallRef.current = null
     }
 
     ensureConnected().then((hub) => {
@@ -354,6 +385,20 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
     }
   }, [active, stopScreenShareInternal])
 
+  const viewRemoteScreen = useCallback(() => {
+    if (remoteScreenShare) {
+      // ja respondemos a chamada antes (o usuario so tinha ocultado o video)
+      setIsViewingRemoteScreen(true)
+      return
+    }
+
+    pendingScreenCallRef.current?.answer()
+  }, [remoteScreenShare])
+
+  const hideRemoteScreen = useCallback(() => {
+    setIsViewingRemoteScreen(false)
+  }, [])
+
   const value: VoiceCallContextValue = {
     active,
     isJoined,
@@ -361,7 +406,9 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
     isMuted,
     isSharingScreen,
     participants,
+    remoteScreenSharer,
     remoteScreenShare,
+    isViewingRemoteScreen,
     localScreenStream,
     error,
     localVideoRef,
@@ -371,6 +418,8 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
     toggleMute,
     startScreenShare,
     stopScreenShare,
+    viewRemoteScreen,
+    hideRemoteScreen,
   }
 
   return <VoiceCallContext.Provider value={value}>{children}</VoiceCallContext.Provider>
