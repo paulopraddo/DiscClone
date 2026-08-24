@@ -94,6 +94,13 @@ body {
   font-size: 15px;
 }
 
+.server-rail-panel-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
 .create-server-form {
   position: absolute;
   left: 80px;
@@ -106,6 +113,29 @@ body {
   padding: 12px;
   border-radius: 8px;
   width: 200px;
+}
+
+.panel-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-h);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.panel-form-header .panel-close-button {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+.panel-form-header .panel-close-button:hover {
+  color: var(--text-h);
 }
 
 .create-server-form input,
