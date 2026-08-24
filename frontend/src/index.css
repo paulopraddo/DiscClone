@@ -532,6 +532,43 @@ body {
   color: var(--accent);
 }
 
+.auth-hint {
+  margin: -8px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.auth-info {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: rgba(59, 165, 93, 0.12);
+  color: #3ba55d;
+  font-size: 14px;
+}
+
+.auth-form .auth-secondary-button {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.auth-form .auth-secondary-button:hover {
+  background: #1e1f22;
+}
+
+.auth-form .auth-secondary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .voice-fullscreen {
   flex: 1;
   display: flex;

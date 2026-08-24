@@ -1,0 +1,57 @@
+using DiscClone.Application.Common;
+using DiscClone.Domain.Common;
+using DiscClone.Domain.Users;
+using FluentResults;
+using MediatR;
+
+namespace DiscClone.Application.Users.Commands.ResendVerificationCode;
+
+public sealed class ResendVerificationCodeCommandHandler(
+    IUserRepository userRepository,
+    IEmailSender emailSender,
+    IUnitOfWork unitOfWork)
+    : IRequestHandler<ResendVerificationCodeCommand, Result>
+{
+    private static readonly TimeSpan ResendCooldown = TimeSpan.FromSeconds(60);
+
+    public async Task<Result> Handle(ResendVerificationCodeCommand request, CancellationToken cancellationToken)
+    {
+        var emailResult = Email.Create(request.Email);
+
+        if (emailResult.IsFailed)
+        {
+            // Não revela se o e-mail existe ou não.
+            return Result.Ok();
+        }
+
+        var user = await userRepository.GetByEmailAsync(emailResult.Value, cancellationToken);
+
+        if (user is null || user.IsEmailVerified)
+        {
+            return Result.Ok();
+        }
+
+        if (user.VerificationCodeExpiresAt is { } expiresAt)
+        {
+            var issuedAt = expiresAt.AddMinutes(-VerificationCodeGenerator.ValidityMinutes);
+
+            if (DateTime.UtcNow - issuedAt < ResendCooldown)
+            {
+                return Result.Fail("Aguarde um pouco antes de solicitar um novo código.");
+            }
+        }
+
+        var code = VerificationCodeGenerator.Generate();
+        user.SetVerificationCode(code, DateTime.UtcNow.AddMinutes(VerificationCodeGenerator.ValidityMinutes));
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await emailSender.SendAsync(
+            user.Email.Value,
+            user.Username.Value,
+            "Seu novo código de confirmação - DiscClone",
+            VerificationEmailTemplate.Render(user.Username.Value, code),
+            cancellationToken);
+
+        return Result.Ok();
+    }
+}

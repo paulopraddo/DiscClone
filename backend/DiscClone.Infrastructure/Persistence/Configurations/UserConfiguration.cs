@@ -32,6 +32,17 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .HasColumnName("created_at")
             .IsRequired();
 
+        builder.Property(u => u.IsEmailVerified)
+            .HasColumnName("is_email_verified")
+            .IsRequired();
+
+        builder.Property(u => u.VerificationCode)
+            .HasColumnName("verification_code")
+            .HasMaxLength(6);
+
+        builder.Property(u => u.VerificationCodeExpiresAt)
+            .HasColumnName("verification_code_expires_at");
+
         builder.HasIndex(u => u.Username).IsUnique();
         builder.HasIndex(u => u.Email).IsUnique();
     }

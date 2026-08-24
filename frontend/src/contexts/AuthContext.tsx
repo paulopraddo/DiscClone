@@ -11,7 +11,9 @@ interface AuthUser {
 interface AuthContextValue {
   user: AuthUser | null
   login: (email: string, password: string) => Promise<void>
-  register: (username: string, email: string, password: string) => Promise<void>
+  register: (username: string, email: string, password: string) => Promise<string>
+  verifyEmail: (email: string, code: string) => Promise<void>
+  resendVerificationCode: (email: string) => Promise<void>
   logout: () => void
 }
 
@@ -49,12 +51,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [applyAuth],
   )
 
-  const register = useCallback(
-    async (username: string, email: string, password: string) => {
-      applyAuth(await api.register(username, email, password))
+  const register = useCallback(async (username: string, email: string, password: string) => {
+    const result = await api.register(username, email, password)
+    return result.email
+  }, [])
+
+  const verifyEmail = useCallback(
+    async (email: string, code: string) => {
+      applyAuth(await api.verifyEmail(email, code))
     },
     [applyAuth],
   )
+
+  const resendVerificationCode = useCallback(async (email: string) => {
+    await api.resendVerificationCode(email)
+  }, [])
 
   const logout = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY)
@@ -63,7 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }, [])
 
-  const value = useMemo(() => ({ user, login, register, logout }), [user, login, register, logout])
+  const value = useMemo(
+    () => ({ user, login, register, verifyEmail, resendVerificationCode, logout }),
+    [user, login, register, verifyEmail, resendVerificationCode, logout],
+  )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

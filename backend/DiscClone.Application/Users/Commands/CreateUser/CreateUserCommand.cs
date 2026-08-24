@@ -4,4 +4,4 @@ using MediatR;
 
 namespace DiscClone.Application.Users.Commands.CreateUser;
 
-public sealed record CreateUserCommand(string Username, string Email, string Password) : IRequest<Result<AuthResult>>;
+public sealed record CreateUserCommand(string Username, string Email, string Password) : IRequest<Result<RegisterResult>>;

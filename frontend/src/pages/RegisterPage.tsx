@@ -17,8 +17,8 @@ function RegisterPage() {
     setIsSubmitting(true)
 
     try {
-      await register(username, email, password)
-      navigate('/')
+      const registeredEmail = await register(username, email, password)
+      navigate('/verify-email', { state: { email: registeredEmail } })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao criar conta.')
     } finally {

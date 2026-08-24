@@ -8,18 +8,22 @@ function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [needsVerification, setNeedsVerification] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     setError(null)
+    setNeedsVerification(false)
     setIsSubmitting(true)
 
     try {
       await login(email, password)
       navigate('/')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao entrar.')
+      const message = err instanceof Error ? err.message : 'Falha ao entrar.'
+      setError(message)
+      setNeedsVerification(message.toLowerCase().includes('confirme seu e-mail'))
     } finally {
       setIsSubmitting(false)
     }
@@ -41,6 +45,12 @@ function LoginPage() {
         </label>
 
         {error && <div className="chat-error">{error}</div>}
+
+        {needsVerification && (
+          <Link className="auth-secondary-button" to="/verify-email" state={{ email }}>
+            Confirmar e-mail
+          </Link>
+        )}
 
         <button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Entrando...' : 'Entrar'}

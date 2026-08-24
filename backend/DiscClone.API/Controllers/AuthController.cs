@@ -1,5 +1,7 @@
 using DiscClone.Application.Users.Commands.CreateUser;
 using DiscClone.Application.Users.Commands.Login;
+using DiscClone.Application.Users.Commands.ResendVerificationCode;
+using DiscClone.Application.Users.Commands.VerifyEmail;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,6 +25,32 @@ public sealed class AuthController(ISender sender) : ControllerBase
         return Ok(result.Value);
     }
 
+    [HttpPost("verify-email")]
+    public async Task<IActionResult> VerifyEmail(VerifyEmailRequest request, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new VerifyEmailCommand(request.Email, request.Code), cancellationToken);
+
+        if (result.IsFailed)
+        {
+            return BadRequest(result.Errors.Select(e => e.Message));
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpPost("resend-code")]
+    public async Task<IActionResult> ResendCode(ResendCodeRequest request, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new ResendVerificationCodeCommand(request.Email), cancellationToken);
+
+        if (result.IsFailed)
+        {
+            return BadRequest(result.Errors.Select(e => e.Message));
+        }
+
+        return Ok();
+    }
+
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginRequest request, CancellationToken cancellationToken)
     {
@@ -38,5 +66,9 @@ public sealed class AuthController(ISender sender) : ControllerBase
 }
 
 public sealed record RegisterRequest(string Username, string Email, string Password);
+
+public sealed record VerifyEmailRequest(string Email, string Code);
+
+public sealed record ResendCodeRequest(string Email);
 
 public sealed record LoginRequest(string Email, string Password);

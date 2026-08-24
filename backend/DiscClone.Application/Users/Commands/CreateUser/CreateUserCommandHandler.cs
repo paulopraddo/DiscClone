@@ -9,11 +9,11 @@ namespace DiscClone.Application.Users.Commands.CreateUser;
 public sealed class CreateUserCommandHandler(
     IUserRepository userRepository,
     IPasswordHasher passwordHasher,
-    ITokenService tokenService,
+    IEmailSender emailSender,
     IUnitOfWork unitOfWork)
-    : IRequestHandler<CreateUserCommand, Result<AuthResult>>
+    : IRequestHandler<CreateUserCommand, Result<RegisterResult>>
 {
-    public async Task<Result<AuthResult>> Handle(CreateUserCommand request, CancellationToken cancellationToken)
+    public async Task<Result<RegisterResult>> Handle(CreateUserCommand request, CancellationToken cancellationToken)
     {
         var usernameResult = Username.Create(request.Username);
         var emailResult = Email.Create(request.Email);
@@ -21,27 +21,36 @@ public sealed class CreateUserCommandHandler(
 
         if (usernameResult.IsFailed || emailResult.IsFailed || passwordResult.IsFailed)
         {
-            return Result.Fail<AuthResult>(
+            return Result.Fail<RegisterResult>(
                 usernameResult.Errors.Concat(emailResult.Errors).Concat(passwordResult.Errors));
         }
 
         if (await userRepository.ExistsByUsernameAsync(usernameResult.Value, cancellationToken))
         {
-            return Result.Fail<AuthResult>("Já existe um usuário com esse nome de usuário.");
+            return Result.Fail<RegisterResult>("Já existe um usuário com esse nome de usuário.");
         }
 
         if (await userRepository.ExistsByEmailAsync(emailResult.Value, cancellationToken))
         {
-            return Result.Fail<AuthResult>("Já existe um usuário com esse e-mail.");
+            return Result.Fail<RegisterResult>("Já existe um usuário com esse e-mail.");
         }
 
         var passwordHash = passwordHasher.Hash(passwordResult.Value.Value);
         var user = User.Create(usernameResult.Value, emailResult.Value, passwordHash).Value;
 
+        var code = VerificationCodeGenerator.Generate();
+        user.SetVerificationCode(code, DateTime.UtcNow.AddMinutes(VerificationCodeGenerator.ValidityMinutes));
+
         await userRepository.AddAsync(user, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var token = tokenService.GenerateToken(user);
-        return Result.Ok(new AuthResult(user.Id, user.Username.Value, token));
+        await emailSender.SendAsync(
+            user.Email.Value,
+            user.Username.Value,
+            "Confirme seu e-mail no DiscClone",
+            VerificationEmailTemplate.Render(user.Username.Value, code),
+            cancellationToken);
+
+        return Result.Ok(new RegisterResult(user.Id, user.Email.Value));
     }
 }

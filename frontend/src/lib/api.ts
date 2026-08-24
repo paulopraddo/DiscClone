@@ -4,6 +4,11 @@ export interface AuthResponse {
   token: string
 }
 
+export interface RegisterResponse {
+  userId: string
+  email: string
+}
+
 export interface ChannelSummary {
   id: string
   name: string
@@ -50,8 +55,16 @@ async function request<T>(path: string, options: { method: string; body?: unknow
   return data as T
 }
 
-export function register(username: string, email: string, password: string): Promise<AuthResponse> {
-  return request<AuthResponse>('/api/auth/register', { method: 'POST', body: { username, email, password } })
+export function register(username: string, email: string, password: string): Promise<RegisterResponse> {
+  return request<RegisterResponse>('/api/auth/register', { method: 'POST', body: { username, email, password } })
+}
+
+export function verifyEmail(email: string, code: string): Promise<AuthResponse> {
+  return request<AuthResponse>('/api/auth/verify-email', { method: 'POST', body: { email, code } })
+}
+
+export function resendVerificationCode(email: string): Promise<void> {
+  return request<void>('/api/auth/resend-code', { method: 'POST', body: { email } })
 }
 
 export function login(email: string, password: string): Promise<AuthResponse> {

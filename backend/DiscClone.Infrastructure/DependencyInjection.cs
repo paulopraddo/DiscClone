@@ -5,6 +5,7 @@ using DiscClone.Domain.Common;
 using DiscClone.Domain.Messages;
 using DiscClone.Domain.Servers;
 using DiscClone.Domain.Users;
+using DiscClone.Infrastructure.Emailing;
 using DiscClone.Infrastructure.Persistence;
 using DiscClone.Infrastructure.Persistence.Repositories;
 using DiscClone.Infrastructure.Realtime;
@@ -36,6 +37,12 @@ public static class DependencyInjection
 
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
+
+        services.Configure<BrevoOptions>(configuration.GetSection(BrevoOptions.SectionName));
+        services.AddHttpClient<IEmailSender, BrevoEmailSender>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.brevo.com/v3/");
+        });
 
         services.AddSignalR(options => options.AddFilter<HubExceptionFilter>());
         services.AddSingleton<VoiceRoomRegistry>();

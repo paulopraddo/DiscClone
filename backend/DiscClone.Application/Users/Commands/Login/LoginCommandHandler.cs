@@ -29,6 +29,11 @@ public sealed class LoginCommandHandler(
             return Result.Fail<AuthResult>(InvalidCredentialsMessage);
         }
 
+        if (!user.IsEmailVerified)
+        {
+            return Result.Fail<AuthResult>("Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.");
+        }
+
         var token = tokenService.GenerateToken(user);
         return Result.Ok(new AuthResult(user.Id, user.Username.Value, token));
     }
