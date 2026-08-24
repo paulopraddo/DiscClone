@@ -41,15 +41,17 @@ public sealed class CreateUserCommandHandler(
         var code = VerificationCodeGenerator.Generate();
         user.SetVerificationCode(code, DateTime.UtcNow.AddMinutes(VerificationCodeGenerator.ValidityMinutes));
 
-        await userRepository.AddAsync(user, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
+        // Só grava o usuário se o e-mail de verificação realmente sair — senão a conta
+        // fica presa no banco sem o usuário nunca ter recebido o código para confirmar.
         await emailSender.SendAsync(
             user.Email.Value,
             user.Username.Value,
             "Confirme seu e-mail no DiscClone",
             VerificationEmailTemplate.Render(user.Username.Value, code),
             cancellationToken);
+
+        await userRepository.AddAsync(user, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Ok(new RegisterResult(user.Id, user.Email.Value));
     }

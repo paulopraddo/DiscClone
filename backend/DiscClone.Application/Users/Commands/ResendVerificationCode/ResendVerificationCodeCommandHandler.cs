@@ -43,14 +43,17 @@ public sealed class ResendVerificationCodeCommandHandler(
 
         var code = VerificationCodeGenerator.Generate();
         user.SetVerificationCode(code, DateTime.UtcNow.AddMinutes(VerificationCodeGenerator.ValidityMinutes));
-        await unitOfWork.SaveChangesAsync(cancellationToken);
 
+        // Só grava o novo código se o e-mail sair — senão o código antigo (que o usuário
+        // ainda não usou) seria substituído por um que ele nunca recebeu.
         await emailSender.SendAsync(
             user.Email.Value,
             user.Username.Value,
             "Seu novo código de confirmação - DiscClone",
             VerificationEmailTemplate.Render(user.Username.Value, code),
             cancellationToken);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();
     }
