@@ -355,7 +355,10 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true })
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      })
       screenStreamRef.current = stream
 
       if (localVideoRef.current) {
