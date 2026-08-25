@@ -3,4 +3,5 @@
   <Project Path="DiscClone.Application/DiscClone.Application.csproj" />
   <Project Path="DiscClone.Infrastructure/DiscClone.Infrastructure.csproj" />
   <Project Path="DiscClone.Domain/DiscClone.Domain.csproj" />
+  <Project Path="DiscClone.Tests/DiscClone.Tests.csproj" />
 </Solution>
