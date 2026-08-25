@@ -349,7 +349,9 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
 
       try {
         const stream = await withTimeout(
-          navigator.mediaDevices.getUserMedia({ audio: true }),
+          navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          }),
           MEDIA_TIMEOUT_MS,
           'Não foi possível acessar o microfone. Verifique a permissão do navegador e tente novamente.',
         )
