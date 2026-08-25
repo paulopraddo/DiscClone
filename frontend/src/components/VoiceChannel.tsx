@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useVoiceCall } from '../contexts/VoiceCallContext'
 import { getAvatarColor, getInitials } from '../lib/avatar'
@@ -53,6 +53,28 @@ function ScreenShareIcon() {
   )
 }
 
+function ExpandIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+      <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+      <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+      <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+    </svg>
+  )
+}
+
+function CollapseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+      <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+      <path d="M3 16h3a2 2 0 0 1 2 2v3" />
+      <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+    </svg>
+  )
+}
+
 function VoiceChannel({ serverId, channelId, channelName, localUserId, localUsername }: VoiceChannelProps) {
   const {
     isJoined,
@@ -78,11 +100,55 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
     hideRemoteScreen,
   } = useVoiceCall()
   const navigate = useNavigate()
+  const localStageBoxRef = useRef<HTMLDivElement>(null)
+  const remoteStageBoxRef = useRef<HTMLDivElement>(null)
+  const [fullscreenTarget, setFullscreenTarget] = useState<'local' | 'remote' | null>(null)
 
   useEffect(() => {
     joinChannel(serverId, channelId, channelName)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverId, channelId, channelName])
+
+  useEffect(() => {
+    function handleFullscreenChange() {
+      if (document.fullscreenElement === localStageBoxRef.current) {
+        setFullscreenTarget('local')
+      } else if (document.fullscreenElement === remoteStageBoxRef.current) {
+        setFullscreenTarget('remote')
+      } else {
+        setFullscreenTarget(null)
+      }
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
+
+  async function toggleFullscreen(target: 'local' | 'remote') {
+    if (fullscreenTarget === target) {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen().catch(() => undefined)
+      }
+      return
+    }
+
+    const box = target === 'local' ? localStageBoxRef.current : remoteStageBoxRef.current
+
+    if (box?.requestFullscreen) {
+      try {
+        await box.requestFullscreen()
+        return
+      } catch {
+        // cai para o fallback do iOS abaixo
+      }
+    }
+
+    // Safari no iOS não implementa a Fullscreen API em elementos genéricos,
+    // só no próprio <video> via uma API nativa dele.
+    const video = target === 'local' ? localVideoRef.current : remoteVideoRef.current
+    const iosVideo = video as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null
+    iosVideo?.webkitEnterFullscreen?.()
+  }
 
   function handleHangup() {
     leaveCall()
@@ -133,15 +199,33 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
         <div className="voice-stage">
           <div className="voice-stage-videos">
             {showLocalStage && (
-              <div className="voice-stage-video-box">
+              <div className="voice-stage-video-box" ref={localStageBoxRef}>
                 <video ref={localVideoRef} className="voice-stage-video" autoPlay playsInline muted />
                 <span className="voice-stage-video-label">Você (compartilhando)</span>
+                <button
+                  type="button"
+                  className="voice-stage-fullscreen voice-stage-fullscreen--alone"
+                  onClick={() => toggleFullscreen('local')}
+                  title={fullscreenTarget === 'local' ? 'Sair da tela cheia' : 'Ver em tela cheia'}
+                  aria-label={fullscreenTarget === 'local' ? 'Sair da tela cheia' : 'Ver em tela cheia'}
+                >
+                  {fullscreenTarget === 'local' ? <CollapseIcon /> : <ExpandIcon />}
+                </button>
               </div>
             )}
             {showRemoteStage && (
-              <div className="voice-stage-video-box">
+              <div className="voice-stage-video-box" ref={remoteStageBoxRef}>
                 <video ref={remoteVideoRef} className="voice-stage-video" autoPlay playsInline />
                 <span className="voice-stage-video-label">{remoteScreenSharer?.username}</span>
+                <button
+                  type="button"
+                  className="voice-stage-fullscreen"
+                  onClick={() => toggleFullscreen('remote')}
+                  title={fullscreenTarget === 'remote' ? 'Sair da tela cheia' : 'Ver em tela cheia'}
+                  aria-label={fullscreenTarget === 'remote' ? 'Sair da tela cheia' : 'Ver em tela cheia'}
+                >
+                  {fullscreenTarget === 'remote' ? <CollapseIcon /> : <ExpandIcon />}
+                </button>
                 <button
                   type="button"
                   className="voice-stage-hide"
