@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import { useServers } from '../contexts/ServersContext'
+import { useVoiceCall } from '../contexts/VoiceCallContext'
 import { getAvatarColor, getInitials } from '../lib/avatar'
 import { ensureConnected, unwatchVoiceChannel, watchVoiceChannel, type VoiceParticipant } from '../services/chatHub'
 
@@ -11,6 +13,8 @@ interface ChannelListProps {
 function ChannelList({ serverId }: ChannelListProps) {
   const { servers, createChannel } = useServers()
   const server = servers.find((s) => s.id === serverId)
+  const { user } = useAuth()
+  const { active: activeVoiceCall, isJoined: isInVoiceCall, isLocalSpeaking, speakingPeerIds } = useVoiceCall()
 
   const [isCreating, setIsCreating] = useState(false)
   const [name, setName] = useState('')
@@ -95,6 +99,29 @@ function ChannelList({ serverId }: ChannelListProps) {
     }
   }, [voiceChannelIdsKey])
 
+  // O servidor so avisa "alguem entrou" para quem ja estava na sala — quem
+  // esta entrando nunca recebe o proprio evento. Sem isso, seu nome nunca
+  // aparece aqui se essa lista ja estava aberta antes de voce entrar na call.
+  function getDisplayedParticipants(channelId: string): Array<VoiceParticipant & { isSpeaking: boolean }> {
+    const isThisChannelActive = isInVoiceCall && activeVoiceCall?.channelId === channelId
+    const remote = (voiceParticipants[channelId] ?? []).map((participant) => ({
+      ...participant,
+      // So sabemos quem esta falando no canal em que voce realmente esta
+      // conectado — nos outros nao temos o audio de ninguem para analisar.
+      isSpeaking: isThisChannelActive && speakingPeerIds.has(participant.peerId),
+    }))
+
+    if (!isThisChannelActive || !user) {
+      return remote
+    }
+
+    if (remote.some((p) => p.username === user.username)) {
+      return remote
+    }
+
+    return [{ peerId: `self-${user.userId}`, username: user.username, isSpeaking: isLocalSpeaking }, ...remote]
+  }
+
   function cancelCreate() {
     setIsCreating(false)
     setName('')
@@ -161,29 +188,36 @@ function ChannelList({ serverId }: ChannelListProps) {
         {copied ? 'ID copiado!' : 'Convidar (copiar ID)'}
       </button>
       <ul>
-        {server?.channels.map((channel) => (
-          <li key={channel.id}>
-            <NavLink
-              to={`/servers/${serverId}/channels/${channel.id}`}
-              className={({ isActive }) => `channel-link${isActive ? ' active' : ''}`}
-            >
-              {channel.type === 'text' ? '#' : '🔊'} {channel.name}
-            </NavLink>
+        {server?.channels.map((channel) => {
+          const displayedParticipants = channel.type === 'voice' ? getDisplayedParticipants(channel.id) : []
 
-            {channel.type === 'voice' && (voiceParticipants[channel.id]?.length ?? 0) > 0 && (
-              <ul className="voice-channel-members">
-                {voiceParticipants[channel.id].map((participant) => (
-                  <li key={participant.peerId} className="voice-channel-member">
-                    <span className="voice-avatar-xs" style={{ background: getAvatarColor(participant.peerId) }}>
-                      {getInitials(participant.username)}
-                    </span>
-                    <span className="voice-channel-member-name">{participant.username}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </li>
-        ))}
+          return (
+            <li key={channel.id}>
+              <NavLink
+                to={`/servers/${serverId}/channels/${channel.id}`}
+                className={({ isActive }) => `channel-link${isActive ? ' active' : ''}`}
+              >
+                {channel.type === 'text' ? '#' : '🔊'} {channel.name}
+              </NavLink>
+
+              {displayedParticipants.length > 0 && (
+                <ul className="voice-channel-members">
+                  {displayedParticipants.map((participant) => (
+                    <li key={participant.peerId} className="voice-channel-member">
+                      <span
+                        className={`voice-avatar-xs${participant.isSpeaking ? ' speaking' : ''}`}
+                        style={{ background: getAvatarColor(participant.peerId) }}
+                      >
+                        {getInitials(participant.username)}
+                      </span>
+                      <span className="voice-channel-member-name">{participant.username}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          )
+        })}
       </ul>
 
       {isCreating ? (
