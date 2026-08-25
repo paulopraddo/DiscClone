@@ -82,6 +82,8 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
     isMuted,
     isSharingScreen,
     isScreenShareSupported,
+    isLocalSpeaking,
+    speakingPeerIds,
     participants,
     remoteScreenSharer,
     remoteScreenShare,
@@ -242,7 +244,10 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
           <div className="voice-stage-participants">
             {isJoined && (
               <div className="voice-chip">
-                <span className="voice-avatar-sm" style={{ background: getAvatarColor(localUserId) }}>
+                <span
+                  className={`voice-avatar-sm${isLocalSpeaking ? ' speaking' : ''}`}
+                  style={{ background: getAvatarColor(localUserId) }}
+                >
                   {getInitials(localUsername)}
                 </span>
                 <span className="voice-chip-name">{localUsername}</span>
@@ -250,7 +255,10 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
             )}
             {participants.map((participant) => (
               <div className="voice-chip" key={participant.peerId}>
-                <span className="voice-avatar-sm" style={{ background: getAvatarColor(participant.peerId) }}>
+                <span
+                  className={`voice-avatar-sm${speakingPeerIds.has(participant.peerId) ? ' speaking' : ''}`}
+                  style={{ background: getAvatarColor(participant.peerId) }}
+                >
                   {getInitials(participant.username)}
                 </span>
                 <span className="voice-chip-name">{participant.username}</span>
@@ -262,7 +270,10 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
         <div className="voice-grid">
           {isJoined && (
             <div className="voice-tile">
-              <span className="voice-avatar-lg" style={{ background: getAvatarColor(localUserId) }}>
+              <span
+                className={`voice-avatar-lg${isLocalSpeaking ? ' speaking' : ''}`}
+                style={{ background: getAvatarColor(localUserId) }}
+              >
                 {getInitials(localUsername)}
               </span>
               <span className="voice-tile-name">{localUsername}</span>
@@ -270,7 +281,10 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
           )}
           {participants.map((participant) => (
             <div className="voice-tile" key={participant.peerId}>
-              <span className="voice-avatar-lg" style={{ background: getAvatarColor(participant.peerId) }}>
+              <span
+                className={`voice-avatar-lg${speakingPeerIds.has(participant.peerId) ? ' speaking' : ''}`}
+                style={{ background: getAvatarColor(participant.peerId) }}
+              >
                 {getInitials(participant.username)}
               </span>
               <span className="voice-tile-name">{participant.username}</span>

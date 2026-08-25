@@ -28,6 +28,7 @@ import {
   playScreenShareStoppedSound,
   playSelfJoinedSound,
 } from '../lib/sounds'
+import { createSpeakingDetector } from '../lib/voiceActivity'
 import { useAuth } from './AuthContext'
 
 const MEDIA_TIMEOUT_MS = 15000
@@ -56,6 +57,8 @@ interface VoiceCallContextValue {
   isMuted: boolean
   isSharingScreen: boolean
   isScreenShareSupported: boolean
+  isLocalSpeaking: boolean
+  speakingPeerIds: Set<string>
   participants: VoiceParticipant[]
   remoteScreenSharer: RemoteScreenSharer | null
   remoteScreenShare: RemoteScreenShare | null
@@ -91,6 +94,8 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
   const [isConnecting, setIsConnecting] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [isSharingScreen, setIsSharingScreen] = useState(false)
+  const [isLocalSpeaking, setIsLocalSpeaking] = useState(false)
+  const [speakingPeerIds, setSpeakingPeerIds] = useState<Set<string>>(new Set())
   const [participants, setParticipants] = useState<VoiceParticipant[]>([])
   const [remoteScreenSharer, setRemoteScreenSharer] = useState<RemoteScreenSharer | null>(null)
   const [remoteScreenShare, setRemoteScreenShare] = useState<RemoteScreenShare | null>(null)
@@ -109,6 +114,26 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
   const pendingScreenCallRef = useRef<MediaConnection | null>(null)
   const connectedChannelIdRef = useRef<string | null>(null)
   const localUserIdRef = useRef<string | null>(null)
+  const speakingCleanupsRef = useRef<Map<string, () => void>>(new Map())
+  const localSpeakingCleanupRef = useRef<(() => void) | null>(null)
+
+  const setPeerSpeaking = useCallback((peerId: string, speaking: boolean) => {
+    setSpeakingPeerIds((current) => {
+      if (speaking === current.has(peerId)) {
+        return current
+      }
+
+      const next = new Set(current)
+
+      if (speaking) {
+        next.add(peerId)
+      } else {
+        next.delete(peerId)
+      }
+
+      return next
+    })
+  }, [])
 
   useEffect(() => {
     localUserIdRef.current = user?.userId ?? null
@@ -125,11 +150,16 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
 
     audio.srcObject = stream
 
+    if (!speakingCleanupsRef.current.has(remotePeerId)) {
+      const cleanup = createSpeakingDetector(stream, (speaking) => setPeerSpeaking(remotePeerId, speaking))
+      speakingCleanupsRef.current.set(remotePeerId, cleanup)
+    }
+
     const username = usernamesRef.current.get(remotePeerId) ?? remotePeerId
     setParticipants((current) =>
       current.some((p) => p.peerId === remotePeerId) ? current : [...current, { peerId: remotePeerId, username }],
     )
-  }, [])
+  }, [setPeerSpeaking])
 
   const removeParticipant = useCallback((remotePeerId: string) => {
     callsRef.current.get(remotePeerId)?.close()
@@ -137,8 +167,11 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
     audioElementsRef.current.get(remotePeerId)?.pause()
     audioElementsRef.current.delete(remotePeerId)
     usernamesRef.current.delete(remotePeerId)
+    speakingCleanupsRef.current.get(remotePeerId)?.()
+    speakingCleanupsRef.current.delete(remotePeerId)
+    setPeerSpeaking(remotePeerId, false)
     setParticipants((current) => current.filter((p) => p.peerId !== remotePeerId))
-  }, [])
+  }, [setPeerSpeaking])
 
   const connectToParticipants = useCallback(
     async (stream: MediaStream, newParticipants: VoiceParticipant[]) => {
@@ -188,6 +221,12 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
     stopScreenShareInternal()
     pendingScreenCallRef.current?.close()
     pendingScreenCallRef.current = null
+    localSpeakingCleanupRef.current?.()
+    localSpeakingCleanupRef.current = null
+    speakingCleanupsRef.current.forEach((cleanup) => cleanup())
+    speakingCleanupsRef.current.clear()
+    setIsLocalSpeaking(false)
+    setSpeakingPeerIds(new Set())
     setRemoteScreenSharer(null)
     setIsViewingRemoteScreen(false)
     setParticipants([])
@@ -376,6 +415,7 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
         connectedChannelIdRef.current = active.channelId
         setIsJoined(true)
         playSelfJoinedSound()
+        localSpeakingCleanupRef.current = createSpeakingDetector(stream, setIsLocalSpeaking)
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Falha ao entrar no canal de voz.')
@@ -513,6 +553,8 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
     isMuted,
     isSharingScreen,
     isScreenShareSupported,
+    isLocalSpeaking,
+    speakingPeerIds,
     participants,
     remoteScreenSharer,
     remoteScreenShare,
