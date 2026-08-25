@@ -29,6 +29,7 @@ import {
   playSelfJoinedSound,
 } from '../lib/sounds'
 import { createSpeakingDetector } from '../lib/voiceActivity'
+import { suppressNoise } from '../lib/noiseSuppressor'
 import { useAuth } from './AuthContext'
 
 const MEDIA_TIMEOUT_MS = 15000
@@ -116,6 +117,8 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
   const localUserIdRef = useRef<string | null>(null)
   const speakingCleanupsRef = useRef<Map<string, () => void>>(new Map())
   const localSpeakingCleanupRef = useRef<(() => void) | null>(null)
+  const rawStreamRef = useRef<MediaStream | null>(null)
+  const noiseSuppressionCleanupRef = useRef<(() => void) | null>(null)
 
   const setPeerSpeaking = useCallback((peerId: string, speaking: boolean) => {
     setSpeakingPeerIds((current) => {
@@ -211,6 +214,10 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const teardownCallState = useCallback(() => {
+    noiseSuppressionCleanupRef.current?.()
+    noiseSuppressionCleanupRef.current = null
+    rawStreamRef.current?.getTracks().forEach((track) => track.stop())
+    rawStreamRef.current = null
     localStreamRef.current?.getTracks().forEach((track) => track.stop())
     localStreamRef.current = null
     callsRef.current.forEach((call) => call.close())
@@ -387,7 +394,7 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
       setError(null)
 
       try {
-        const stream = await withTimeout(
+        const rawStream = await withTimeout(
           navigator.mediaDevices.getUserMedia({
             audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
           }),
@@ -396,7 +403,20 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
         )
 
         if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop())
+          rawStream.getTracks().forEach((track) => track.stop())
+          return
+        }
+
+        rawStreamRef.current = rawStream
+
+        // Alem da supressao nativa do navegador (fraca sozinha), passa o
+        // audio por RNNoise + noise gate para um resultado bem mais limpo.
+        const { stream, cleanup: noiseSuppressionCleanup } = await suppressNoise(rawStream)
+        noiseSuppressionCleanupRef.current = noiseSuppressionCleanup
+
+        if (cancelled) {
+          noiseSuppressionCleanup()
+          rawStream.getTracks().forEach((track) => track.stop())
           return
         }
 
@@ -419,6 +439,10 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Falha ao entrar no canal de voz.')
+          noiseSuppressionCleanupRef.current?.()
+          noiseSuppressionCleanupRef.current = null
+          rawStreamRef.current?.getTracks().forEach((track) => track.stop())
+          rawStreamRef.current = null
           localStreamRef.current?.getTracks().forEach((track) => track.stop())
           localStreamRef.current = null
         }
