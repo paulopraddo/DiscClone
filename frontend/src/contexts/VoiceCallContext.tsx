@@ -21,6 +21,13 @@ import {
 import { callPeer, onIncomingCall } from '../services/peer'
 import { usePeerId } from '../hooks/usePeerId'
 import { withTimeout } from '../lib/withTimeout'
+import {
+  playMutedSound,
+  playParticipantJoinedSound,
+  playParticipantLeftSound,
+  playScreenShareStoppedSound,
+  playSelfJoinedSound,
+} from '../lib/sounds'
 import { useAuth } from './AuthContext'
 
 const MEDIA_TIMEOUT_MS = 15000
@@ -232,6 +239,7 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
       }
 
       usernamesRef.current.set(payload.peerId, payload.username)
+      playParticipantJoinedSound()
 
       if (screenStreamRef.current) {
         callParticipantWithScreen(payload.peerId, screenStreamRef.current)
@@ -246,6 +254,7 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
       removeParticipant(payload.peerId)
       screenCallsRef.current.get(payload.peerId)?.close()
       screenCallsRef.current.delete(payload.peerId)
+      playParticipantLeftSound()
     }
 
     function handleScreenShareStopped(payload: { channelId: string; authorId: string }) {
@@ -253,10 +262,23 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
         return
       }
 
+      let wasSharing = false
+
+      setRemoteScreenSharer((current) => {
+        if (current?.authorId !== payload.authorId) {
+          return current
+        }
+
+        wasSharing = true
+        return null
+      })
       setRemoteScreenShare((current) => (current?.authorId === payload.authorId ? null : current))
-      setRemoteScreenSharer((current) => (current?.authorId === payload.authorId ? null : current))
       setIsViewingRemoteScreen(false)
       pendingScreenCallRef.current = null
+
+      if (wasSharing) {
+        playScreenShareStoppedSound()
+      }
     }
 
     ensureConnected().then((hub) => {
@@ -351,6 +373,7 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
         await connectToParticipants(stream, state.participants)
         connectedChannelIdRef.current = active.channelId
         setIsJoined(true)
+        playSelfJoinedSound()
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Falha ao entrar no canal de voz.')
@@ -387,6 +410,11 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
 
   const leaveCall = useCallback(() => {
     const channelId = connectedChannelIdRef.current ?? active?.channelId ?? null
+
+    if (isJoined) {
+      playParticipantLeftSound()
+    }
+
     teardownCallState()
     connectedChannelIdRef.current = null
     setActive(null)
@@ -395,13 +423,17 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
     if (channelId) {
       leaveVoiceChannel(channelId).catch(() => undefined)
     }
-  }, [active, teardownCallState])
+  }, [active, isJoined, teardownCallState])
 
   const toggleMute = useCallback(() => {
     const track = localStreamRef.current?.getAudioTracks()[0]
 
     if (track) {
       track.enabled = isMuted
+    }
+
+    if (!isMuted) {
+      playMutedSound()
     }
 
     setIsMuted((current) => !current)
@@ -428,7 +460,13 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
         localVideoRef.current.srcObject = stream
       }
 
-      stream.getVideoTracks()[0].addEventListener('ended', stopScreenShareInternal)
+      // Se o usuario parar pelo botao nativo do navegador (em vez do nosso botao),
+      // isso so encerra a track local — avisa o hub e toca o som igual ao stopScreenShare.
+      stream.getVideoTracks()[0].addEventListener('ended', () => {
+        stopScreenShareInternal()
+        playScreenShareStoppedSound()
+        stopVoiceScreenShare(active.channelId).catch(() => undefined)
+      })
 
       for (const participant of participants) {
         callParticipantWithScreen(participant.peerId, stream)
@@ -445,6 +483,7 @@ export function VoiceCallProvider({ children }: { children: ReactNode }) {
 
   const stopScreenShare = useCallback(() => {
     stopScreenShareInternal()
+    playScreenShareStoppedSound()
 
     if (active) {
       stopVoiceScreenShare(active.channelId).catch(() => undefined)
