@@ -3,8 +3,26 @@ import Peer, { type MediaConnection } from 'peerjs'
 let peer: Peer | null = null
 let openPromise: Promise<string> | null = null
 
+// Sem um servidor TURN, dois peers atrás de NAT/firewall mais restritivo (rede
+// corporativa, certas operadoras) não conseguem uma rota P2P estável — a call
+// conecta mas fica instável ou cai. STUN sozinho só ajuda a descobrir o
+// caminho direto, não retransmite mídia quando esse caminho não é bom.
+//
+// TODO: credenciais publicas de teste (OpenRelay/Metered) — trocar por um TURN
+// proprio antes de qualquer uso com mais gente, sao compartilhadas e sem SLA.
+const ICE_SERVERS: RTCIceServer[] = [
+  { urls: 'stun:stun.relay.metered.ca:80' },
+  { urls: 'turn:global.relay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:global.relay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+  {
+    urls: 'turn:global.relay.metered.ca:443?transport=tcp',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
+]
+
 function getPeer(): Peer {
-  peer ??= new Peer()
+  peer ??= new Peer({ config: { iceServers: ICE_SERVERS } })
   return peer
 }
 
