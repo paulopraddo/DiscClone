@@ -5,6 +5,7 @@ using DiscClone.Application.Servers.Commands.CreateServer;
 using DiscClone.Application.Servers.Commands.DeleteServer;
 using DiscClone.Application.Servers.Commands.JoinServer;
 using DiscClone.Application.Servers.Commands.LeaveServer;
+using DiscClone.Application.Servers.Commands.RenameServer;
 using DiscClone.Application.Servers.Queries.GetMyServers;
 using DiscClone.Domain.Channels;
 using MediatR;
@@ -70,6 +71,20 @@ public sealed class ServersController(ISender sender) : ControllerBase
         return Ok();
     }
 
+    [HttpPatch("{serverId:guid}")]
+    public async Task<IActionResult> RenameServer(
+        Guid serverId, RenameServerRequest request, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new RenameServerCommand(serverId, request.Name, GetUserId()), cancellationToken);
+
+        if (result.IsFailed)
+        {
+            return BadRequest(result.Errors.Select(e => e.Message));
+        }
+
+        return Ok();
+    }
+
     [HttpDelete("{serverId:guid}")]
     public async Task<IActionResult> DeleteServer(Guid serverId, CancellationToken cancellationToken)
     {
@@ -120,5 +135,7 @@ public sealed class ServersController(ISender sender) : ControllerBase
 }
 
 public sealed record CreateServerRequest(string Name);
+
+public sealed record RenameServerRequest(string Name);
 
 public sealed record CreateChannelRequest(string Name, string Type);

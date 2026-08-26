@@ -8,6 +8,7 @@ interface ServersContextValue {
   createServer: (name: string) => Promise<void>
   createChannel: (serverId: string, name: string, type: 'text' | 'voice') => Promise<void>
   joinServer: (serverId: string) => Promise<void>
+  renameServer: (serverId: string, name: string) => Promise<void>
   leaveServer: (serverId: string) => Promise<void>
   deleteServer: (serverId: string) => Promise<void>
   deleteChannel: (serverId: string, channelId: string) => Promise<void>
@@ -62,6 +63,14 @@ export function ServersProvider({ children }: { children: ReactNode }) {
     [refresh],
   )
 
+  const renameServer = useCallback(
+    async (serverId: string, name: string) => {
+      await api.renameServer(serverId, name)
+      await refresh()
+    },
+    [refresh],
+  )
+
   const leaveServer = useCallback(
     async (serverId: string) => {
       await api.leaveServer(serverId)
@@ -94,12 +103,25 @@ export function ServersProvider({ children }: { children: ReactNode }) {
       createServer,
       createChannel,
       joinServer,
+      renameServer,
       leaveServer,
       deleteServer,
       deleteChannel,
       refresh,
     }),
-    [servers, isLoading, error, createServer, createChannel, joinServer, leaveServer, deleteServer, deleteChannel, refresh],
+    [
+      servers,
+      isLoading,
+      error,
+      createServer,
+      createChannel,
+      joinServer,
+      renameServer,
+      leaveServer,
+      deleteServer,
+      deleteChannel,
+      refresh,
+    ],
   )
 
   return <ServersContext.Provider value={value}>{children}</ServersContext.Provider>

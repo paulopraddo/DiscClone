@@ -11,7 +11,7 @@ interface ChannelListProps {
 }
 
 function ChannelList({ serverId }: ChannelListProps) {
-  const { servers, createChannel, deleteChannel } = useServers()
+  const { servers, createChannel, deleteChannel, renameServer } = useServers()
   const server = servers.find((s) => s.id === serverId)
   const { user } = useAuth()
   const isOwner = server?.ownerId === user?.userId
@@ -23,6 +23,9 @@ function ChannelList({ serverId }: ChannelListProps) {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [voiceParticipants, setVoiceParticipants] = useState<Record<string, VoiceParticipant[]>>({})
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [serverNameDraft, setServerNameDraft] = useState('')
+  const [renameError, setRenameError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
   const voiceChannelIdsKey = (server?.channels ?? [])
@@ -165,6 +168,33 @@ function ChannelList({ serverId }: ChannelListProps) {
     }
   }
 
+  function startRenaming() {
+    setServerNameDraft(server?.name ?? '')
+    setRenameError(null)
+    setIsRenaming(true)
+  }
+
+  function cancelRenaming() {
+    setIsRenaming(false)
+    setRenameError(null)
+  }
+
+  async function handleRenameServer(event: React.FormEvent) {
+    event.preventDefault()
+
+    if (!serverNameDraft.trim()) {
+      return
+    }
+
+    try {
+      await renameServer(serverId, serverNameDraft.trim())
+      setIsRenaming(false)
+      setRenameError(null)
+    } catch (err) {
+      setRenameError(err instanceof Error ? err.message : 'Falha ao renomear servidor.')
+    }
+  }
+
   async function handleDeleteChannel(event: React.MouseEvent, channelId: string, channelName: string) {
     event.preventDefault()
     event.stopPropagation()
@@ -199,7 +229,26 @@ function ChannelList({ serverId }: ChannelListProps) {
 
   return (
     <nav className="channel-list">
-      <h2 className="channel-list-title">{server?.name ?? 'Servidor'}</h2>
+      {isRenaming ? (
+        <form className="channel-list-title-form" onSubmit={handleRenameServer}>
+          <input
+            type="text"
+            value={serverNameDraft}
+            onChange={(event) => setServerNameDraft(event.target.value)}
+            autoFocus
+            onBlur={cancelRenaming}
+          />
+          {renameError && <span className="chat-error">{renameError}</span>}
+        </form>
+      ) : (
+        <h2
+          className={`channel-list-title${isOwner ? ' channel-list-title-editable' : ''}`}
+          title={isOwner ? 'Clique para renomear o servidor' : undefined}
+          onClick={isOwner ? startRenaming : undefined}
+        >
+          {server?.name ?? 'Servidor'}
+        </h2>
+      )}
       <button type="button" className="invite-button" onClick={handleCopyInvite}>
         {copied ? 'ID copiado!' : 'Convidar (copiar ID)'}
       </button>

@@ -227,6 +227,40 @@ body {
   font-size: 15px;
   padding: 0 8px;
   margin: 0 0 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.channel-list-title-editable {
+  cursor: pointer;
+}
+
+.channel-list-title-editable:hover {
+  background: #35373c;
+}
+
+.channel-list-title-form {
+  padding: 0 8px;
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.channel-list-title-form input {
+  border: none;
+  border-radius: 4px;
+  padding: 4px 6px;
+  background: #1e1f22;
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+}
+
+.channel-list-title-form input:focus {
+  outline: none;
 }
 
 .invite-button {

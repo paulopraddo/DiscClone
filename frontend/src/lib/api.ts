@@ -101,6 +101,10 @@ export function joinServer(serverId: string): Promise<void> {
   return request<void>(`/api/servers/${serverId}/join`, { method: 'POST' })
 }
 
+export function renameServer(serverId: string, name: string): Promise<void> {
+  return request<void>(`/api/servers/${serverId}`, { method: 'PATCH', body: { name } })
+}
+
 export function leaveServer(serverId: string): Promise<void> {
   return request<void>(`/api/servers/${serverId}/leave`, { method: 'POST' })
 }

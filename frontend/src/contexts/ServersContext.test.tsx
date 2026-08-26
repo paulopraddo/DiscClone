@@ -67,6 +67,20 @@ describe('ServersContext', () => {
     expect(api.joinServer).toHaveBeenCalledWith('server-1')
   })
 
+  it('renameServer chama a api com o id do servidor e o novo nome', async () => {
+    vi.mocked(api.getMyServers).mockResolvedValue([])
+    vi.mocked(api.renameServer).mockResolvedValue(undefined)
+
+    const { result } = renderServers()
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => {
+      await result.current.renameServer('server-1', 'Novo Nome')
+    })
+
+    expect(api.renameServer).toHaveBeenCalledWith('server-1', 'Novo Nome')
+  })
+
   it('leaveServer chama a api com o id do servidor', async () => {
     vi.mocked(api.getMyServers).mockResolvedValue([])
     vi.mocked(api.leaveServer).mockResolvedValue(undefined)
