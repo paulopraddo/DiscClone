@@ -732,6 +732,49 @@ body {
   text-align: center;
 }
 
+.error-boundary {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg, #313338);
+}
+
+.error-boundary-box {
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--sidebar-bg);
+  padding: 32px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.error-boundary-box h1 {
+  margin: 0;
+  font-size: 22px;
+  color: var(--text-h);
+}
+
+.error-boundary-box p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.error-boundary-box button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .auth-switch a {
   color: var(--accent);
 }

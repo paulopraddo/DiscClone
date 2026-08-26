@@ -85,6 +85,10 @@ Configuráveis via `appsettings.json` / `appsettings.Development.json` ou variá
 
 A API limita requisições por IP: 100 req/min globalmente e 10 req/min nos endpoints de `/api/auth/*` (login, registro, verificação, reenvio de código), para dificultar força bruta. Excedendo o limite, a API responde `429 Too Many Requests`.
 
+## Health check
+
+`GET /health` verifica se a API está no ar e consegue se conectar ao PostgreSQL, retornando `200 Healthy` ou `503 Unhealthy`. Útil para probes de infraestrutura (Railway/Fly/Render, load balancers, etc).
+
 ## Deploy
 
 - **Backend**: `backend/Dockerfile` builda e roda a API; aplica migrations pendentes automaticamente ao iniciar. Pensado para plataformas como Railway/Fly/Render (lê a porta de `PORT` e confia em cabeçalhos `X-Forwarded-*` de proxy reverso).
