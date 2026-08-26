@@ -97,3 +97,24 @@ A API limita requisições por IP: 100 req/min globalmente e 10 req/min nos endp
 ## CI
 
 Workflow em [`.github/workflows/ci.yml`](.github/workflows/ci.yml) builda e testa backend e frontend em cada push/PR para `main`.
+
+## Limitações conhecidas (o que falta para produção real)
+
+Este projeto é sólido como estudo/portfólio (Clean Architecture, DDD, testes, CI, SignalR, WebRTC funcionando de ponta a ponta), mas **não está pronto para produção com usuários pagantes** sem resolver os pontos abaixo.
+
+**Bloqueadores de escala** — quebram ou degradam com mais de uma instância/uso real:
+- `VoiceRoomRegistry` (estado das salas de voz) é um singleton em memória: não funciona com múltiplas instâncias do backend atrás de um load balancer. SignalR também precisaria de um backplane (ex.: Redis) para escalar horizontalmente.
+- Voz/compartilhamento de tela via PeerJS é P2P mesh puro, sem servidor TURN. Falha atrás de NAT simétrico/firewall corporativo, e a qualidade cai rápido com mais de ~4 participantes numa call (cada peer envia mídia para todos os outros).
+- JWT sem refresh token nem revogação: logout só limpa o token no cliente; o token continua válido no servidor até expirar (`Jwt:ExpirationMinutes`, hoje 24h). Não há como invalidar uma sessão comprometida.
+
+**Segurança/confiabilidade antes de aceitar usuários reais:**
+- Sem observabilidade: nenhum logging estruturado, métricas ou error tracking (ex.: Sentry, Application Insights).
+- Sem lockout de conta após tentativas de login inválidas (só rate limit por IP, contornável).
+- Segredos (`Jwt:Secret`, `Brevo:ApiKey`) vivem em `appsettings`/variáveis de ambiente simples; em produção deveriam estar num vault (Key Vault, secrets do provedor de deploy, etc).
+- Sem exclusão de conta nem exportação de dados do usuário (relevante para LGPD/GDPR).
+
+**Faltando para virar produto (não para funcionar, para vender):**
+- Billing/assinatura (sem Stripe, planos ou limites por plano).
+- Upload de arquivo/imagem no chat, avatar de usuário.
+- Papéis além de dono/membro (moderador, permissões por canal).
+- Notificações (badge de não lido, push).

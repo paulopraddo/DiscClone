@@ -123,6 +123,20 @@ describe('ServersContext', () => {
     expect(api.createChannel).toHaveBeenCalledWith('server-1', 'geral', 'text')
   })
 
+  it('renameChannel chama a api com servidor, canal e novo nome', async () => {
+    vi.mocked(api.getMyServers).mockResolvedValue([])
+    vi.mocked(api.renameChannel).mockResolvedValue(undefined)
+
+    const { result } = renderServers()
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => {
+      await result.current.renameChannel('server-1', 'channel-1', 'anuncios')
+    })
+
+    expect(api.renameChannel).toHaveBeenCalledWith('server-1', 'channel-1', 'anuncios')
+  })
+
   it('deleteChannel chama a api com servidor e canal', async () => {
     vi.mocked(api.getMyServers).mockResolvedValue([])
     vi.mocked(api.deleteChannel).mockResolvedValue(undefined)

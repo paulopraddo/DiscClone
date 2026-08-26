@@ -11,6 +11,7 @@ interface ServersContextValue {
   renameServer: (serverId: string, name: string) => Promise<void>
   leaveServer: (serverId: string) => Promise<void>
   deleteServer: (serverId: string) => Promise<void>
+  renameChannel: (serverId: string, channelId: string, name: string) => Promise<void>
   deleteChannel: (serverId: string, channelId: string) => Promise<void>
   refresh: () => Promise<void>
 }
@@ -87,6 +88,14 @@ export function ServersProvider({ children }: { children: ReactNode }) {
     [refresh],
   )
 
+  const renameChannel = useCallback(
+    async (serverId: string, channelId: string, name: string) => {
+      await api.renameChannel(serverId, channelId, name)
+      await refresh()
+    },
+    [refresh],
+  )
+
   const deleteChannel = useCallback(
     async (serverId: string, channelId: string) => {
       await api.deleteChannel(serverId, channelId)
@@ -106,6 +115,7 @@ export function ServersProvider({ children }: { children: ReactNode }) {
       renameServer,
       leaveServer,
       deleteServer,
+      renameChannel,
       deleteChannel,
       refresh,
     }),
@@ -119,6 +129,7 @@ export function ServersProvider({ children }: { children: ReactNode }) {
       renameServer,
       leaveServer,
       deleteServer,
+      renameChannel,
       deleteChannel,
       refresh,
     ],

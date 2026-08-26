@@ -233,12 +233,32 @@ body {
   text-overflow: ellipsis;
 }
 
-.channel-list-title-editable {
-  cursor: pointer;
+.channel-list-title-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  margin: 0 0 12px;
 }
 
-.channel-list-title-editable:hover {
-  background: #35373c;
+.channel-list-title-row .channel-list-title {
+  padding: 0;
+  margin: 0;
+  flex: 1;
+}
+
+.channel-list-title-edit-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+
+.channel-list-title-edit-button:hover {
+  color: var(--text-h);
 }
 
 .channel-list-title-form {
@@ -322,6 +342,11 @@ body {
   color: var(--text-h);
 }
 
+.channel-link-actions {
+  display: flex;
+  gap: 2px;
+}
+
 .channel-delete-button {
   display: none;
   background: none;
@@ -338,6 +363,27 @@ body {
 
 .channel-delete-button:hover {
   color: #f23f42;
+}
+
+.channel-rename-form {
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.channel-rename-form input {
+  border: none;
+  border-radius: 4px;
+  padding: 4px 6px;
+  background: #1e1f22;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.channel-rename-form input:focus {
+  outline: none;
 }
 
 .channel-list ul.voice-channel-members {

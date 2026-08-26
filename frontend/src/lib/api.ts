@@ -113,6 +113,10 @@ export function deleteServer(serverId: string): Promise<void> {
   return request<void>(`/api/servers/${serverId}`, { method: 'DELETE' })
 }
 
+export function renameChannel(serverId: string, channelId: string, name: string): Promise<void> {
+  return request<void>(`/api/servers/${serverId}/channels/${channelId}`, { method: 'PATCH', body: { name } })
+}
+
 export function deleteChannel(serverId: string, channelId: string): Promise<void> {
   return request<void>(`/api/servers/${serverId}/channels/${channelId}`, { method: 'DELETE' })
 }

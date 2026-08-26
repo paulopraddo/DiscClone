@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using DiscClone.Application.Channels.Commands.CreateChannel;
 using DiscClone.Application.Channels.Commands.DeleteChannel;
+using DiscClone.Application.Channels.Commands.RenameChannel;
 using DiscClone.Application.Servers.Commands.CreateServer;
 using DiscClone.Application.Servers.Commands.DeleteServer;
 using DiscClone.Application.Servers.Commands.JoinServer;
@@ -98,6 +99,21 @@ public sealed class ServersController(ISender sender) : ControllerBase
         return Ok();
     }
 
+    [HttpPatch("{serverId:guid}/channels/{channelId:guid}")]
+    public async Task<IActionResult> RenameChannel(
+        Guid serverId, Guid channelId, RenameChannelRequest request, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(
+            new RenameChannelCommand(serverId, channelId, request.Name, GetUserId()), cancellationToken);
+
+        if (result.IsFailed)
+        {
+            return BadRequest(result.Errors.Select(e => e.Message));
+        }
+
+        return Ok();
+    }
+
     [HttpDelete("{serverId:guid}/channels/{channelId:guid}")]
     public async Task<IActionResult> DeleteChannel(Guid serverId, Guid channelId, CancellationToken cancellationToken)
     {
@@ -139,3 +155,5 @@ public sealed record CreateServerRequest(string Name);
 public sealed record RenameServerRequest(string Name);
 
 public sealed record CreateChannelRequest(string Name, string Type);
+
+public sealed record RenameChannelRequest(string Name);

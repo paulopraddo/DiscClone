@@ -11,7 +11,7 @@ interface ChannelListProps {
 }
 
 function ChannelList({ serverId }: ChannelListProps) {
-  const { servers, createChannel, deleteChannel, renameServer } = useServers()
+  const { servers, createChannel, deleteChannel, renameServer, renameChannel } = useServers()
   const server = servers.find((s) => s.id === serverId)
   const { user } = useAuth()
   const isOwner = server?.ownerId === user?.userId
@@ -26,6 +26,9 @@ function ChannelList({ serverId }: ChannelListProps) {
   const [isRenaming, setIsRenaming] = useState(false)
   const [serverNameDraft, setServerNameDraft] = useState('')
   const [renameError, setRenameError] = useState<string | null>(null)
+  const [renamingChannelId, setRenamingChannelId] = useState<string | null>(null)
+  const [channelNameDraft, setChannelNameDraft] = useState('')
+  const [channelRenameError, setChannelRenameError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
   const voiceChannelIdsKey = (server?.channels ?? [])
@@ -195,6 +198,35 @@ function ChannelList({ serverId }: ChannelListProps) {
     }
   }
 
+  function startRenamingChannel(event: React.MouseEvent, channelId: string, channelName: string) {
+    event.preventDefault()
+    event.stopPropagation()
+    setRenamingChannelId(channelId)
+    setChannelNameDraft(channelName)
+    setChannelRenameError(null)
+  }
+
+  function cancelRenamingChannel() {
+    setRenamingChannelId(null)
+    setChannelRenameError(null)
+  }
+
+  async function handleRenameChannel(event: React.FormEvent, channelId: string) {
+    event.preventDefault()
+
+    if (!channelNameDraft.trim()) {
+      return
+    }
+
+    try {
+      await renameChannel(serverId, channelId, channelNameDraft.trim())
+      setRenamingChannelId(null)
+      setChannelRenameError(null)
+    } catch (err) {
+      setChannelRenameError(err instanceof Error ? err.message : 'Falha ao renomear canal.')
+    }
+  }
+
   async function handleDeleteChannel(event: React.MouseEvent, channelId: string, channelName: string) {
     event.preventDefault()
     event.stopPropagation()
@@ -241,13 +273,19 @@ function ChannelList({ serverId }: ChannelListProps) {
           {renameError && <span className="chat-error">{renameError}</span>}
         </form>
       ) : (
-        <h2
-          className={`channel-list-title${isOwner ? ' channel-list-title-editable' : ''}`}
-          title={isOwner ? 'Clique para renomear o servidor' : undefined}
-          onClick={isOwner ? startRenaming : undefined}
-        >
-          {server?.name ?? 'Servidor'}
-        </h2>
+        <div className="channel-list-title-row">
+          <h2 className="channel-list-title">{server?.name ?? 'Servidor'}</h2>
+          {isOwner && (
+            <button
+              type="button"
+              className="channel-list-title-edit-button"
+              title="Renomear servidor"
+              onClick={startRenaming}
+            >
+              ✎
+            </button>
+          )}
+        </div>
       )}
       <button type="button" className="invite-button" onClick={handleCopyInvite}>
         {copied ? 'ID copiado!' : 'Convidar (copiar ID)'}
@@ -258,24 +296,50 @@ function ChannelList({ serverId }: ChannelListProps) {
 
           return (
             <li key={channel.id}>
-              <div className="channel-link-row">
-                <NavLink
-                  to={`/servers/${serverId}/channels/${channel.id}`}
-                  className={({ isActive }) => `channel-link${isActive ? ' active' : ''}`}
+              {renamingChannelId === channel.id ? (
+                <form
+                  className="channel-rename-form"
+                  onSubmit={(event) => handleRenameChannel(event, channel.id)}
                 >
-                  {channel.type === 'text' ? '#' : '🔊'} {channel.name}
-                </NavLink>
-                {isOwner && (
-                  <button
-                    type="button"
-                    className="channel-delete-button"
-                    title="Apagar canal"
-                    onClick={(event) => handleDeleteChannel(event, channel.id, channel.name)}
+                  <input
+                    type="text"
+                    value={channelNameDraft}
+                    onChange={(event) => setChannelNameDraft(event.target.value)}
+                    autoFocus
+                    onBlur={cancelRenamingChannel}
+                  />
+                  {channelRenameError && <span className="chat-error">{channelRenameError}</span>}
+                </form>
+              ) : (
+                <div className="channel-link-row">
+                  <NavLink
+                    to={`/servers/${serverId}/channels/${channel.id}`}
+                    className={({ isActive }) => `channel-link${isActive ? ' active' : ''}`}
                   >
-                    ✕
-                  </button>
-                )}
-              </div>
+                    {channel.type === 'text' ? '#' : '🔊'} {channel.name}
+                  </NavLink>
+                  {isOwner && (
+                    <span className="channel-link-actions">
+                      <button
+                        type="button"
+                        className="channel-delete-button"
+                        title="Renomear canal"
+                        onClick={(event) => startRenamingChannel(event, channel.id, channel.name)}
+                      >
+                        ✎
+                      </button>
+                      <button
+                        type="button"
+                        className="channel-delete-button"
+                        title="Apagar canal"
+                        onClick={(event) => handleDeleteChannel(event, channel.id, channel.name)}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  )}
+                </div>
+              )}
 
               {displayedParticipants.length > 0 && (
                 <ul className="voice-channel-members">
