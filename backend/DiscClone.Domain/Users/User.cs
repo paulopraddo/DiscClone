@@ -12,6 +12,8 @@ public sealed class User : Entity
     public bool IsEmailVerified { get; private set; }
     public string? VerificationCode { get; private set; }
     public DateTime? VerificationCodeExpiresAt { get; private set; }
+    public string? PasswordResetCode { get; private set; }
+    public DateTime? PasswordResetCodeExpiresAt { get; private set; }
 
     private User(Guid id, Username username, Email email, string passwordHash, DateTime createdAt)
         : base(id)
@@ -64,6 +66,35 @@ public sealed class User : Entity
         IsEmailVerified = true;
         VerificationCode = null;
         VerificationCodeExpiresAt = null;
+        return Result.Ok();
+    }
+
+    public void SetPasswordResetCode(string code, DateTime expiresAt)
+    {
+        PasswordResetCode = code;
+        PasswordResetCodeExpiresAt = expiresAt;
+    }
+
+    public Result ResetPassword(string code, string newPasswordHash)
+    {
+        if (PasswordResetCode is null || PasswordResetCodeExpiresAt is null)
+        {
+            return Result.Fail("Código inválido ou expirado.");
+        }
+
+        if (DateTime.UtcNow > PasswordResetCodeExpiresAt)
+        {
+            return Result.Fail("Código inválido ou expirado.");
+        }
+
+        if (!string.Equals(PasswordResetCode, code, StringComparison.Ordinal))
+        {
+            return Result.Fail("Código inválido ou expirado.");
+        }
+
+        PasswordHash = newPasswordHash;
+        PasswordResetCode = null;
+        PasswordResetCodeExpiresAt = null;
         return Result.Ok();
     }
 }

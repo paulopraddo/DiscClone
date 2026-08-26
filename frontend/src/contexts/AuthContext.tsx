@@ -14,6 +14,8 @@ interface AuthContextValue {
   register: (username: string, email: string, password: string) => Promise<string>
   verifyEmail: (email: string, code: string) => Promise<void>
   resendVerificationCode: (email: string) => Promise<void>
+  forgotPassword: (email: string) => Promise<void>
+  resetPassword: (email: string, code: string, newPassword: string) => Promise<void>
   logout: () => void
 }
 
@@ -67,6 +69,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await api.resendVerificationCode(email)
   }, [])
 
+  const forgotPassword = useCallback(async (email: string) => {
+    await api.forgotPassword(email)
+  }, [])
+
+  const resetPassword = useCallback(async (email: string, code: string, newPassword: string) => {
+    await api.resetPassword(email, code, newPassword)
+  }, [])
+
   const logout = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY)
     setAuthToken(null)
@@ -75,8 +85,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo(
-    () => ({ user, login, register, verifyEmail, resendVerificationCode, logout }),
-    [user, login, register, verifyEmail, resendVerificationCode, logout],
+    () => ({
+      user,
+      login,
+      register,
+      verifyEmail,
+      resendVerificationCode,
+      forgotPassword,
+      resetPassword,
+      logout,
+    }),
+    [user, login, register, verifyEmail, resendVerificationCode, forgotPassword, resetPassword, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

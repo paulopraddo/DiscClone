@@ -43,6 +43,13 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.VerificationCodeExpiresAt)
             .HasColumnName("verification_code_expires_at");
 
+        builder.Property(u => u.PasswordResetCode)
+            .HasColumnName("password_reset_code")
+            .HasMaxLength(6);
+
+        builder.Property(u => u.PasswordResetCodeExpiresAt)
+            .HasColumnName("password_reset_code_expires_at");
+
         builder.HasIndex(u => u.Username).IsUnique();
         builder.HasIndex(u => u.Email).IsUnique();
     }

@@ -44,6 +44,10 @@ function LoginPage() {
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </label>
 
+        <p className="auth-switch">
+          <Link to="/forgot-password">Esqueci minha senha</Link>
+        </p>
+
         {error && <div className="chat-error">{error}</div>}
 
         {needsVerification && (

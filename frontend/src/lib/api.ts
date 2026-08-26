@@ -73,6 +73,14 @@ export function login(email: string, password: string): Promise<AuthResponse> {
   return request<AuthResponse>('/api/auth/login', { method: 'POST', body: { email, password } })
 }
 
+export function forgotPassword(email: string): Promise<void> {
+  return request<void>('/api/auth/forgot-password', { method: 'POST', body: { email } })
+}
+
+export function resetPassword(email: string, code: string, newPassword: string): Promise<void> {
+  return request<void>('/api/auth/reset-password', { method: 'POST', body: { email, code, newPassword } })
+}
+
 export function getMyServers(): Promise<ServerSummary[]> {
   return request<ServerSummary[]>('/api/servers', { method: 'GET' })
 }

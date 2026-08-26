@@ -88,6 +88,28 @@ describe('AuthContext', () => {
     expect(result.current.user).toEqual({ userId: '1', username: 'joao', token: 'tok' })
   })
 
+  it('forgotPassword chama a api com o e-mail', async () => {
+    vi.mocked(api.forgotPassword).mockResolvedValue(undefined)
+    const { result } = renderAuth()
+
+    await act(async () => {
+      await result.current.forgotPassword('joao@example.com')
+    })
+
+    expect(api.forgotPassword).toHaveBeenCalledWith('joao@example.com')
+  })
+
+  it('resetPassword chama a api com e-mail, codigo e nova senha', async () => {
+    vi.mocked(api.resetPassword).mockResolvedValue(undefined)
+    const { result } = renderAuth()
+
+    await act(async () => {
+      await result.current.resetPassword('joao@example.com', '123456', 'novaSenha123')
+    })
+
+    expect(api.resetPassword).toHaveBeenCalledWith('joao@example.com', '123456', 'novaSenha123')
+  })
+
   it('logout limpa o usuário e o localStorage', async () => {
     vi.mocked(api.login).mockResolvedValue({ userId: '1', username: 'joao', token: 'tok' })
     const { result } = renderAuth()

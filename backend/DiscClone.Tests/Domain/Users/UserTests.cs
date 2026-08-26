@@ -79,4 +79,52 @@ public class UserTests
         Assert.True(result.IsSuccess);
         Assert.True(user.IsEmailVerified);
     }
+
+    [Fact]
+    public void ResetPassword_ComCodigoCorretoENaoExpirado_TrocaSenha()
+    {
+        var user = CreateUser();
+        user.SetPasswordResetCode("123456", DateTime.UtcNow.AddMinutes(15));
+
+        var result = user.ResetPassword("123456", "novo-hash");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("novo-hash", user.PasswordHash);
+        Assert.Null(user.PasswordResetCode);
+        Assert.Null(user.PasswordResetCodeExpiresAt);
+    }
+
+    [Fact]
+    public void ResetPassword_ComCodigoErrado_RetornaFalhaSemTrocarSenha()
+    {
+        var user = CreateUser();
+        user.SetPasswordResetCode("123456", DateTime.UtcNow.AddMinutes(15));
+
+        var result = user.ResetPassword("000000", "novo-hash");
+
+        Assert.True(result.IsFailed);
+        Assert.Equal("hash", user.PasswordHash);
+    }
+
+    [Fact]
+    public void ResetPassword_ComCodigoExpirado_RetornaFalha()
+    {
+        var user = CreateUser();
+        user.SetPasswordResetCode("123456", DateTime.UtcNow.AddMinutes(-1));
+
+        var result = user.ResetPassword("123456", "novo-hash");
+
+        Assert.True(result.IsFailed);
+        Assert.Equal("hash", user.PasswordHash);
+    }
+
+    [Fact]
+    public void ResetPassword_SemCodigoPendente_RetornaFalha()
+    {
+        var user = CreateUser();
+
+        var result = user.ResetPassword("123456", "novo-hash");
+
+        Assert.True(result.IsFailed);
+    }
 }

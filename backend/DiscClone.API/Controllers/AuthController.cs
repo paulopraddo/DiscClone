@@ -1,6 +1,8 @@
 using DiscClone.Application.Users.Commands.CreateUser;
+using DiscClone.Application.Users.Commands.ForgotPassword;
 using DiscClone.Application.Users.Commands.Login;
 using DiscClone.Application.Users.Commands.ResendVerificationCode;
+using DiscClone.Application.Users.Commands.ResetPassword;
 using DiscClone.Application.Users.Commands.VerifyEmail;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -65,6 +67,33 @@ public sealed class AuthController(ISender sender) : ControllerBase
 
         return Ok(result.Value);
     }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new ForgotPasswordCommand(request.Email), cancellationToken);
+
+        if (result.IsFailed)
+        {
+            return BadRequest(result.Errors.Select(e => e.Message));
+        }
+
+        return Ok();
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(
+            new ResetPasswordCommand(request.Email, request.Code, request.NewPassword), cancellationToken);
+
+        if (result.IsFailed)
+        {
+            return BadRequest(result.Errors.Select(e => e.Message));
+        }
+
+        return Ok();
+    }
 }
 
 public sealed record RegisterRequest(string Username, string Email, string Password);
@@ -74,3 +103,7 @@ public sealed record VerifyEmailRequest(string Email, string Code);
 public sealed record ResendCodeRequest(string Email);
 
 public sealed record LoginRequest(string Email, string Password);
+
+public sealed record ForgotPasswordRequest(string Email);
+
+public sealed record ResetPasswordRequest(string Email, string Code, string NewPassword);
