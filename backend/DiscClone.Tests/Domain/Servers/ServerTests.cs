@@ -56,4 +56,60 @@ public class ServerTests
         Assert.Single(server.Channels);
         Assert.Equal(server.Id, result.Value.ServerId);
     }
+
+    [Fact]
+    public void RemoveChannel_ComCanalExistente_Remove()
+    {
+        var server = CreateServer(out _);
+        var channel = server.AddChannel(ChannelName.Create("geral").Value, ChannelType.Text).Value;
+
+        var result = server.RemoveChannel(channel.Id);
+
+        Assert.True(result.IsSuccess);
+        Assert.Empty(server.Channels);
+    }
+
+    [Fact]
+    public void RemoveChannel_ComCanalInexistente_RetornaFalha()
+    {
+        var server = CreateServer(out _);
+
+        var result = server.RemoveChannel(Guid.NewGuid());
+
+        Assert.True(result.IsFailed);
+    }
+
+    [Fact]
+    public void RemoveMember_ComMembroExistente_Remove()
+    {
+        var server = CreateServer(out _);
+        var memberId = Guid.NewGuid();
+        server.AddMember(memberId);
+
+        var result = server.RemoveMember(memberId);
+
+        Assert.True(result.IsSuccess);
+        Assert.DoesNotContain(server.Members, m => m.UserId == memberId);
+    }
+
+    [Fact]
+    public void RemoveMember_ComOwner_RetornaFalha()
+    {
+        var server = CreateServer(out var ownerId);
+
+        var result = server.RemoveMember(ownerId);
+
+        Assert.True(result.IsFailed);
+        Assert.Single(server.Members);
+    }
+
+    [Fact]
+    public void RemoveMember_ComUsuarioQueNaoEMembro_RetornaFalha()
+    {
+        var server = CreateServer(out _);
+
+        var result = server.RemoveMember(Guid.NewGuid());
+
+        Assert.True(result.IsFailed);
+    }
 }

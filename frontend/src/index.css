@@ -74,6 +74,38 @@ body {
   font-size: 13px;
 }
 
+.server-icon-row {
+  position: relative;
+}
+
+.server-leave-button {
+  display: none;
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--rail-bg);
+  background: #2b2d31;
+  color: var(--text-muted);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  line-height: 1;
+  padding: 0;
+}
+
+.server-icon-row:hover .server-leave-button {
+  display: flex;
+}
+
+.server-leave-button:hover {
+  background: #f23f42;
+  color: #fff;
+}
+
 .server-rail-spacer {
   flex: 1;
 }
@@ -223,8 +255,24 @@ body {
   gap: 6px;
 }
 
+.channel-link-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+}
+
+.channel-link-row:hover {
+  background: #35373c;
+}
+
+.channel-link-row:has(.channel-link.active) {
+  background: #3f4248;
+}
+
 .channel-link {
   display: block;
+  flex: 1;
   padding: 7px 8px;
   border-radius: 4px;
   color: var(--text-muted);
@@ -232,14 +280,30 @@ body {
   font-size: 15px;
 }
 
-.channel-link:hover {
-  background: #35373c;
+.channel-link-row:hover .channel-link {
   color: var(--text);
 }
 
 .channel-link.active {
-  background: #3f4248;
   color: var(--text-h);
+}
+
+.channel-delete-button {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.channel-link-row:hover .channel-delete-button {
+  display: block;
+}
+
+.channel-delete-button:hover {
+  color: #f23f42;
 }
 
 .channel-list ul.voice-channel-members {
@@ -493,6 +557,61 @@ body {
 
 .chat-message-content {
   margin: 2px 0 0;
+}
+
+.chat-message {
+  position: relative;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.chat-message:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.03));
+}
+
+.chat-message-edited {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.chat-message-actions {
+  position: absolute;
+  top: -12px;
+  right: 4px;
+  display: none;
+  gap: 4px;
+  background: var(--bg-secondary, #2b2d31);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+
+.chat-message:hover .chat-message-actions {
+  display: flex;
+}
+
+.chat-message-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 2px 4px;
+}
+
+.chat-message-actions button:hover {
+  color: var(--text-h);
+}
+
+.chat-message-edit-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.chat-message-edit-form input {
+  flex: 1;
 }
 
 .chat-error {

@@ -7,7 +7,7 @@ type PanelMode = 'closed' | 'create' | 'join'
 
 function ServerRail() {
   const { user, logout } = useAuth()
-  const { servers, createServer, joinServer } = useServers()
+  const { servers, createServer, joinServer, leaveServer, deleteServer } = useServers()
   const [mode, setMode] = useState<PanelMode>('closed')
   const [name, setName] = useState('')
   const [serverId, setServerId] = useState('')
@@ -67,6 +67,29 @@ function ServerRail() {
     }
   }
 
+  async function handleLeaveOrDeleteServer(event: React.MouseEvent, serverId: string, serverName: string, isOwner: boolean) {
+    event.preventDefault()
+    event.stopPropagation()
+
+    const confirmMessage = isOwner
+      ? `Apagar o servidor "${serverName}"? Todos os canais e mensagens serão perdidos. Essa ação não pode ser desfeita.`
+      : `Sair do servidor "${serverName}"?`
+
+    if (!window.confirm(confirmMessage)) {
+      return
+    }
+
+    try {
+      if (isOwner) {
+        await deleteServer(serverId)
+      } else {
+        await leaveServer(serverId)
+      }
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Falha ao sair/apagar o servidor.')
+    }
+  }
+
   async function handleJoinServer(event: React.FormEvent) {
     event.preventDefault()
 
@@ -90,16 +113,29 @@ function ServerRail() {
         DC
       </NavLink>
       <div className="server-rail-divider" />
-      {servers.map((server) => (
-        <NavLink
-          key={server.id}
-          to={`/servers/${server.id}`}
-          className={({ isActive }) => `server-icon${isActive ? ' active' : ''}`}
-          title={server.name}
-        >
-          {server.name.slice(0, 2).toUpperCase()}
-        </NavLink>
-      ))}
+      {servers.map((server) => {
+        const isOwner = server.ownerId === user?.userId
+
+        return (
+          <div key={server.id} className="server-icon-row">
+            <NavLink
+              to={`/servers/${server.id}`}
+              className={({ isActive }) => `server-icon${isActive ? ' active' : ''}`}
+              title={server.name}
+            >
+              {server.name.slice(0, 2).toUpperCase()}
+            </NavLink>
+            <button
+              type="button"
+              className="server-leave-button"
+              title={isOwner ? 'Apagar servidor' : 'Sair do servidor'}
+              onClick={(event) => handleLeaveOrDeleteServer(event, server.id, server.name, isOwner)}
+            >
+              {isOwner ? '🗑' : '⏏'}
+            </button>
+          </div>
+        )
+      })}
 
       <div className="server-rail-panel-group" ref={panelRef}>
         <button

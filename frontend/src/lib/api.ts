@@ -21,11 +21,13 @@ export interface MessageSummary {
   authorUsername: string
   content: string
   sentAt: string
+  editedAt: string | null
 }
 
 export interface ServerSummary {
   id: string
   name: string
+  ownerId: string
   channels: ChannelSummary[]
 }
 
@@ -89,6 +91,18 @@ export function createChannel(
 
 export function joinServer(serverId: string): Promise<void> {
   return request<void>(`/api/servers/${serverId}/join`, { method: 'POST' })
+}
+
+export function leaveServer(serverId: string): Promise<void> {
+  return request<void>(`/api/servers/${serverId}/leave`, { method: 'POST' })
+}
+
+export function deleteServer(serverId: string): Promise<void> {
+  return request<void>(`/api/servers/${serverId}`, { method: 'DELETE' })
+}
+
+export function deleteChannel(serverId: string, channelId: string): Promise<void> {
+  return request<void>(`/api/servers/${serverId}/channels/${channelId}`, { method: 'DELETE' })
 }
 
 export function getChannelMessages(channelId: string): Promise<MessageSummary[]> {

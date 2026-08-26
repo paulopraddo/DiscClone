@@ -8,6 +8,9 @@ interface ServersContextValue {
   createServer: (name: string) => Promise<void>
   createChannel: (serverId: string, name: string, type: 'text' | 'voice') => Promise<void>
   joinServer: (serverId: string) => Promise<void>
+  leaveServer: (serverId: string) => Promise<void>
+  deleteServer: (serverId: string) => Promise<void>
+  deleteChannel: (serverId: string, channelId: string) => Promise<void>
   refresh: () => Promise<void>
 }
 
@@ -59,9 +62,44 @@ export function ServersProvider({ children }: { children: ReactNode }) {
     [refresh],
   )
 
+  const leaveServer = useCallback(
+    async (serverId: string) => {
+      await api.leaveServer(serverId)
+      await refresh()
+    },
+    [refresh],
+  )
+
+  const deleteServer = useCallback(
+    async (serverId: string) => {
+      await api.deleteServer(serverId)
+      await refresh()
+    },
+    [refresh],
+  )
+
+  const deleteChannel = useCallback(
+    async (serverId: string, channelId: string) => {
+      await api.deleteChannel(serverId, channelId)
+      await refresh()
+    },
+    [refresh],
+  )
+
   const value = useMemo(
-    () => ({ servers, isLoading, error, createServer, createChannel, joinServer, refresh }),
-    [servers, isLoading, error, createServer, createChannel, joinServer, refresh],
+    () => ({
+      servers,
+      isLoading,
+      error,
+      createServer,
+      createChannel,
+      joinServer,
+      leaveServer,
+      deleteServer,
+      deleteChannel,
+      refresh,
+    }),
+    [servers, isLoading, error, createServer, createChannel, joinServer, leaveServer, deleteServer, deleteChannel, refresh],
   )
 
   return <ServersContext.Provider value={value}>{children}</ServersContext.Provider>

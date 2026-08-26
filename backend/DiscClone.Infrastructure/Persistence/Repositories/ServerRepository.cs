@@ -19,4 +19,6 @@ public sealed class ServerRepository(DiscCloneDbContext dbContext) : IServerRepo
 
     public async Task AddAsync(Server server, CancellationToken cancellationToken = default) =>
         await dbContext.Servers.AddAsync(server, cancellationToken);
+
+    public void Remove(Server server) => dbContext.Servers.Remove(server);
 }

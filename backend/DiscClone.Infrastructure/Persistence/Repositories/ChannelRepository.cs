@@ -13,4 +13,6 @@ public sealed class ChannelRepository(DiscCloneDbContext dbContext) : IChannelRe
 
     public async Task AddAsync(Channel channel, CancellationToken cancellationToken = default) =>
         await dbContext.Channels.AddAsync(channel, cancellationToken);
+
+    public void Remove(Channel channel) => dbContext.Channels.Remove(channel);
 }

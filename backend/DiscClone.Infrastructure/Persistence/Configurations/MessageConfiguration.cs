@@ -1,3 +1,4 @@
+using DiscClone.Domain.Channels;
 using DiscClone.Domain.Messages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -34,5 +35,10 @@ public sealed class MessageConfiguration : IEntityTypeConfiguration<Message>
             .HasColumnName("edited_at");
 
         builder.HasIndex(m => m.ChannelId);
+
+        builder.HasOne<Channel>()
+            .WithMany()
+            .HasForeignKey(m => m.ChannelId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

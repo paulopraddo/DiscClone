@@ -1,5 +1,7 @@
 using System.Security.Claims;
 using DiscClone.Application.Channels.Queries.CanAccessChannel;
+using DiscClone.Application.Messages.Commands.DeleteMessage;
+using DiscClone.Application.Messages.Commands.EditMessage;
 using DiscClone.Application.Messages.Commands.SendMessage;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -41,6 +43,37 @@ public sealed class ChatHub(ISender sender, VoiceRoomRegistry voiceRooms) : Hub
             Content = content,
             SentAt = DateTime.UtcNow
         });
+    }
+
+    public async Task EditMessage(Guid messageId, string content)
+    {
+        var result = await sender.Send(new EditMessageCommand(messageId, content, GetUserId()));
+
+        if (result.IsFailed)
+        {
+            await Clients.Caller.SendAsync("MessageRejected", result.Errors.Select(e => e.Message));
+            return;
+        }
+
+        await Clients.Group(GetGroupName(result.Value.ChannelId)).SendAsync("MessageEdited", new
+        {
+            MessageId = messageId,
+            Content = content,
+            EditedAt = result.Value.EditedAt
+        });
+    }
+
+    public async Task DeleteMessage(Guid messageId)
+    {
+        var result = await sender.Send(new DeleteMessageCommand(messageId, GetUserId()));
+
+        if (result.IsFailed)
+        {
+            await Clients.Caller.SendAsync("MessageRejected", result.Errors.Select(e => e.Message));
+            return;
+        }
+
+        await Clients.Group(GetGroupName(result.Value)).SendAsync("MessageDeleted", new { MessageId = messageId });
     }
 
     public Task StartVoiceScreenShare(Guid channelId, string peerId) =>

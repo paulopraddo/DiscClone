@@ -45,7 +45,8 @@ public sealed class GetChannelMessagesQueryHandler(
                 m.AuthorId,
                 usernameByAuthorId.GetValueOrDefault(m.AuthorId, "Usuário removido"),
                 m.Content.Value,
-                m.CreatedAt))
+                m.CreatedAt,
+                m.EditedAt))
             .ToList();
 
         return Result.Ok<IReadOnlyList<MessageSummary>>(summaries);

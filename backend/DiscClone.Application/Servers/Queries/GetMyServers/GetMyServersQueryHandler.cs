@@ -16,6 +16,7 @@ public sealed class GetMyServersQueryHandler(IServerRepository serverRepository)
             .Select(server => new ServerSummary(
                 server.Id,
                 server.Name.Value,
+                server.OwnerId,
                 server.Channels
                     .Select(channel => new ChannelSummary(
                         channel.Id,

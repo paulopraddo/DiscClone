@@ -100,6 +100,16 @@ export async function sendMessage(channelId: string, content: string): Promise<v
   await hub.invoke('SendMessage', channelId, content)
 }
 
+export async function editMessage(messageId: string, content: string): Promise<void> {
+  const hub = await ensureConnected()
+  await hub.invoke('EditMessage', messageId, content)
+}
+
+export async function deleteMessage(messageId: string): Promise<void> {
+  const hub = await ensureConnected()
+  await hub.invoke('DeleteMessage', messageId)
+}
+
 export async function joinVoiceChannel(channelId: string, peerId: string): Promise<VoiceChannelState> {
   const hub = await ensureConnected()
   activeVoice = { channelId, peerId }

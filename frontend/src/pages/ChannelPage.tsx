@@ -9,7 +9,9 @@ function ChannelPage() {
   const { serverId, channelId } = useParams<{ serverId: string; channelId: string }>()
   const { user } = useAuth()
   const { servers } = useServers()
-  const channel = servers.find((s) => s.id === serverId)?.channels.find((c) => c.id === channelId)
+  const server = servers.find((s) => s.id === serverId)
+  const channel = server?.channels.find((c) => c.id === channelId)
+  const isServerOwner = server?.ownerId === user?.userId
 
   return (
     <>
@@ -25,7 +27,12 @@ function ChannelPage() {
             localUsername={user!.username}
           />
         ) : (
-          <ChatArea channelId={channelId!} channelName={channel?.name ?? ''} localUserId={user!.userId} />
+          <ChatArea
+            channelId={channelId!}
+            channelName={channel?.name ?? ''}
+            localUserId={user!.userId}
+            isServerOwner={isServerOwner}
+          />
         )}
       </div>
     </>

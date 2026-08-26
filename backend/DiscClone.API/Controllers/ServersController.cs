@@ -1,7 +1,10 @@
 using System.Security.Claims;
 using DiscClone.Application.Channels.Commands.CreateChannel;
+using DiscClone.Application.Channels.Commands.DeleteChannel;
 using DiscClone.Application.Servers.Commands.CreateServer;
+using DiscClone.Application.Servers.Commands.DeleteServer;
 using DiscClone.Application.Servers.Commands.JoinServer;
+using DiscClone.Application.Servers.Commands.LeaveServer;
 using DiscClone.Application.Servers.Queries.GetMyServers;
 using DiscClone.Domain.Channels;
 using MediatR;
@@ -45,6 +48,45 @@ public sealed class ServersController(ISender sender) : ControllerBase
     public async Task<IActionResult> JoinServer(Guid serverId, CancellationToken cancellationToken)
     {
         var result = await sender.Send(new JoinServerCommand(serverId, GetUserId()), cancellationToken);
+
+        if (result.IsFailed)
+        {
+            return BadRequest(result.Errors.Select(e => e.Message));
+        }
+
+        return Ok();
+    }
+
+    [HttpPost("{serverId:guid}/leave")]
+    public async Task<IActionResult> LeaveServer(Guid serverId, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new LeaveServerCommand(serverId, GetUserId()), cancellationToken);
+
+        if (result.IsFailed)
+        {
+            return BadRequest(result.Errors.Select(e => e.Message));
+        }
+
+        return Ok();
+    }
+
+    [HttpDelete("{serverId:guid}")]
+    public async Task<IActionResult> DeleteServer(Guid serverId, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new DeleteServerCommand(serverId, GetUserId()), cancellationToken);
+
+        if (result.IsFailed)
+        {
+            return BadRequest(result.Errors.Select(e => e.Message));
+        }
+
+        return Ok();
+    }
+
+    [HttpDelete("{serverId:guid}/channels/{channelId:guid}")]
+    public async Task<IActionResult> DeleteChannel(Guid serverId, Guid channelId, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new DeleteChannelCommand(serverId, channelId, GetUserId()), cancellationToken);
 
         if (result.IsFailed)
         {

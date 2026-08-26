@@ -11,9 +11,10 @@ interface ChannelListProps {
 }
 
 function ChannelList({ serverId }: ChannelListProps) {
-  const { servers, createChannel } = useServers()
+  const { servers, createChannel, deleteChannel } = useServers()
   const server = servers.find((s) => s.id === serverId)
   const { user } = useAuth()
+  const isOwner = server?.ownerId === user?.userId
   const { active: activeVoiceCall, isJoined: isInVoiceCall, isLocalSpeaking, speakingPeerIds } = useVoiceCall()
 
   const [isCreating, setIsCreating] = useState(false)
@@ -164,6 +165,21 @@ function ChannelList({ serverId }: ChannelListProps) {
     }
   }
 
+  async function handleDeleteChannel(event: React.MouseEvent, channelId: string, channelName: string) {
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (!window.confirm(`Apagar o canal #${channelName}? Essa ação não pode ser desfeita.`)) {
+      return
+    }
+
+    try {
+      await deleteChannel(serverId, channelId)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao apagar canal.')
+    }
+  }
+
   async function handleCreateChannel(event: React.FormEvent) {
     event.preventDefault()
 
@@ -193,12 +209,24 @@ function ChannelList({ serverId }: ChannelListProps) {
 
           return (
             <li key={channel.id}>
-              <NavLink
-                to={`/servers/${serverId}/channels/${channel.id}`}
-                className={({ isActive }) => `channel-link${isActive ? ' active' : ''}`}
-              >
-                {channel.type === 'text' ? '#' : '🔊'} {channel.name}
-              </NavLink>
+              <div className="channel-link-row">
+                <NavLink
+                  to={`/servers/${serverId}/channels/${channel.id}`}
+                  className={({ isActive }) => `channel-link${isActive ? ' active' : ''}`}
+                >
+                  {channel.type === 'text' ? '#' : '🔊'} {channel.name}
+                </NavLink>
+                {isOwner && (
+                  <button
+                    type="button"
+                    className="channel-delete-button"
+                    title="Apagar canal"
+                    onClick={(event) => handleDeleteChannel(event, channel.id, channel.name)}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
 
               {displayedParticipants.length > 0 && (
                 <ul className="voice-channel-members">

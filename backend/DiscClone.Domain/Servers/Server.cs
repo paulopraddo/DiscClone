@@ -57,6 +57,37 @@ public sealed class Server : Entity
         return Result.Ok(member);
     }
 
+    public Result<Channel> RemoveChannel(Guid channelId)
+    {
+        var channel = _channels.FirstOrDefault(c => c.Id == channelId);
+
+        if (channel is null)
+        {
+            return Result.Fail("Canal não encontrado.");
+        }
+
+        _channels.Remove(channel);
+        return Result.Ok(channel);
+    }
+
+    public Result<ServerMember> RemoveMember(Guid userId)
+    {
+        if (userId == OwnerId)
+        {
+            return Result.Fail("O dono não pode sair do servidor. Delete o servidor em vez disso.");
+        }
+
+        var member = _members.FirstOrDefault(m => m.UserId == userId);
+
+        if (member is null)
+        {
+            return Result.Fail("Você não é membro deste servidor.");
+        }
+
+        _members.Remove(member);
+        return Result.Ok(member);
+    }
+
     public void Rename(ServerName name)
     {
         Name = name;
