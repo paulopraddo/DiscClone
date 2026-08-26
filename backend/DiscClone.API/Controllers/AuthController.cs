@@ -4,11 +4,13 @@ using DiscClone.Application.Users.Commands.ResendVerificationCode;
 using DiscClone.Application.Users.Commands.VerifyEmail;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DiscClone.API.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("auth")]
 public sealed class AuthController(ISender sender) : ControllerBase
 {
     [HttpPost("register")]

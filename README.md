@@ -81,6 +81,10 @@ Configuráveis via `appsettings.json` / `appsettings.Development.json` ou variá
 |---|---|
 | `VITE_API_URL` | URL base da API backend (HTTP e SignalR). |
 
+## Rate limiting
+
+A API limita requisições por IP: 100 req/min globalmente e 10 req/min nos endpoints de `/api/auth/*` (login, registro, verificação, reenvio de código), para dificultar força bruta. Excedendo o limite, a API responde `429 Too Many Requests`.
+
 ## Deploy
 
 - **Backend**: `backend/Dockerfile` builda e roda a API; aplica migrations pendentes automaticamente ao iniciar. Pensado para plataformas como Railway/Fly/Render (lê a porta de `PORT` e confia em cabeçalhos `X-Forwarded-*` de proxy reverso).
