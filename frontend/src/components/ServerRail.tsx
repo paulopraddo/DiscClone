@@ -1,3 +1,4 @@
+import { Link2, LogOut, Plus, Power, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -131,7 +132,7 @@ function ServerRail() {
               title={isOwner ? 'Apagar servidor' : 'Sair do servidor'}
               onClick={(event) => handleLeaveOrDeleteServer(event, server.id, server.name, isOwner)}
             >
-              {isOwner ? '🗑' : '⏏'}
+              {isOwner ? <Trash2 size={12} /> : <LogOut size={12} />}
             </button>
           </div>
         )
@@ -144,7 +145,7 @@ function ServerRail() {
           title="Criar servidor"
           onClick={() => togglePanel('create')}
         >
-          +
+          <Plus size={18} />
         </button>
 
         <button
@@ -153,7 +154,7 @@ function ServerRail() {
           title="Entrar em servidor"
           onClick={() => togglePanel('join')}
         >
-          🔗
+          <Link2 size={15} />
         </button>
 
         {mode === 'create' && (
@@ -161,7 +162,7 @@ function ServerRail() {
             <div className="panel-form-header">
               <span>Criar servidor</span>
               <button type="button" className="panel-close-button" onClick={closePanel} aria-label="Fechar">
-                ✕
+                <X size={13} />
               </button>
             </div>
             <input
@@ -181,7 +182,7 @@ function ServerRail() {
             <div className="panel-form-header">
               <span>Entrar em servidor</span>
               <button type="button" className="panel-close-button" onClick={closePanel} aria-label="Fechar">
-                ✕
+                <X size={13} />
               </button>
             </div>
             <input
@@ -205,7 +206,7 @@ function ServerRail() {
         title={`Sair (${user?.username})`}
         onClick={logout}
       >
-        ⏻
+        <Power size={18} />
       </button>
     </nav>
   )

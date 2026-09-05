@@ -1,3 +1,4 @@
+import { Pencil, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { getChannelMessages } from '../lib/api'
 import {
@@ -246,12 +247,12 @@ function ChatArea({ channelId, channelName, localUserId, isServerOwner }: ChatAr
                   <span className="chat-message-actions">
                     {isOwnMessage && (
                       <button type="button" onClick={() => startEditing(message)} title="Editar mensagem">
-                        ✎
+                        <Pencil size={13} />
                       </button>
                     )}
                     {canDelete && (
                       <button type="button" onClick={() => handleDelete(message.id)} title="Apagar mensagem">
-                        🗑
+                        <Trash2 size={13} />
                       </button>
                     )}
                   </span>

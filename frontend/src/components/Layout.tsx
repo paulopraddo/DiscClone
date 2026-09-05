@@ -1,3 +1,4 @@
+import { Menu } from 'lucide-react'
 import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { ServersProvider } from '../contexts/ServersContext'
@@ -20,7 +21,7 @@ function LayoutContent() {
   return (
     <div className={`app-layout${isDrawerOpen ? ' drawer-open' : ''}`}>
       <button type="button" className="mobile-menu-button" onClick={toggleDrawer} aria-label="Abrir menu">
-        ☰
+        <Menu size={18} />
       </button>
 
       {isDrawerOpen && <div className="mobile-backdrop" onClick={closeDrawer} />}

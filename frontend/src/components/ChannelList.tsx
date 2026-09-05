@@ -1,3 +1,4 @@
+import { Hash, Mic, Pencil, Plus, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -282,7 +283,7 @@ function ChannelList({ serverId }: ChannelListProps) {
               title="Renomear servidor"
               onClick={startRenaming}
             >
-              ✎
+              <Pencil size={12} />
             </button>
           )}
         </div>
@@ -316,7 +317,7 @@ function ChannelList({ serverId }: ChannelListProps) {
                     to={`/servers/${serverId}/channels/${channel.id}`}
                     className={({ isActive }) => `channel-link${isActive ? ' active' : ''}`}
                   >
-                    {channel.type === 'text' ? '#' : '🔊'} {channel.name}
+                    {channel.type === 'text' ? <Hash size={14} /> : <Mic size={14} />} {channel.name}
                   </NavLink>
                   {isOwner && (
                     <span className="channel-link-actions">
@@ -326,7 +327,7 @@ function ChannelList({ serverId }: ChannelListProps) {
                         title="Renomear canal"
                         onClick={(event) => startRenamingChannel(event, channel.id, channel.name)}
                       >
-                        ✎
+                        <Pencil size={12} />
                       </button>
                       <button
                         type="button"
@@ -334,7 +335,7 @@ function ChannelList({ serverId }: ChannelListProps) {
                         title="Apagar canal"
                         onClick={(event) => handleDeleteChannel(event, channel.id, channel.name)}
                       >
-                        ✕
+                        <X size={12} />
                       </button>
                     </span>
                   )}
@@ -366,7 +367,7 @@ function ChannelList({ serverId }: ChannelListProps) {
           <div className="panel-form-header">
             <span>Criar canal</span>
             <button type="button" className="panel-close-button" onClick={cancelCreate} aria-label="Fechar">
-              ✕
+              <X size={13} />
             </button>
           </div>
           <input
@@ -385,7 +386,7 @@ function ChannelList({ serverId }: ChannelListProps) {
         </form>
       ) : (
         <button type="button" className="create-channel-button" onClick={() => setIsCreating(true)}>
-          + Criar canal
+          <Plus size={14} /> Criar canal
         </button>
       )}
     </nav>

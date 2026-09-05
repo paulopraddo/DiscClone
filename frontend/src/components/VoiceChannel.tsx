@@ -1,3 +1,4 @@
+import { Maximize2, Mic, MicOff, Minimize2, Monitor, MonitorUp, PhoneOff, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useVoiceCall } from '../contexts/VoiceCallContext'
@@ -9,70 +10,6 @@ interface VoiceChannelProps {
   channelName: string
   localUserId: string
   localUsername: string
-}
-
-function MicIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="9" y="2" width="6" height="11" rx="3" />
-      <path d="M5 10a7 7 0 0 0 14 0" />
-      <line x1="12" y1="19" x2="12" y2="22" />
-    </svg>
-  )
-}
-
-function MicOffIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 6.51V5a3 3 0 0 0-5.94-.6" />
-      <path d="M5 10a7 7 0 0 0 10.29 6.17" />
-      <path d="M17.9 12.9A7 7 0 0 0 19 10" />
-      <line x1="12" y1="19" x2="12" y2="22" />
-      <line x1="2" y1="2" x2="22" y2="22" />
-    </svg>
-  )
-}
-
-function HangupIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-      <path d="M12 9c-2.5 0-4.8.6-6.9 1.6a1 1 0 0 0-.5 1.2l1 3a1 1 0 0 0 1.2.6c1-.3 2-.5 3.2-.5v-2.3c0-.4.3-.8.7-.9.7-.2 1.5-.3 2.3-.3s1.6.1 2.3.3c.4.1.7.5.7.9v2.3c1.2 0 2.2.2 3.2.5a1 1 0 0 0 1.2-.6l1-3a1 1 0 0 0-.5-1.2C16.8 9.6 14.5 9 12 9z" />
-    </svg>
-  )
-}
-
-function ScreenShareIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="4" width="20" height="14" rx="2" />
-      <line x1="8" y1="21" x2="16" y2="21" />
-      <line x1="12" y1="17" x2="12" y2="21" />
-      <path d="M9.5 10.5 12 8l2.5 2.5" />
-      <line x1="12" y1="8" x2="12" y2="13" />
-    </svg>
-  )
-}
-
-function ExpandIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 3H5a2 2 0 0 0-2 2v3" />
-      <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
-      <path d="M3 16v3a2 2 0 0 0 2 2h3" />
-      <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
-    </svg>
-  )
-}
-
-function CollapseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 3v3a2 2 0 0 1-2 2H3" />
-      <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
-      <path d="M3 16h3a2 2 0 0 1 2 2v3" />
-      <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
-    </svg>
-  )
 }
 
 function VoiceChannel({ serverId, channelId, channelName, localUserId, localUsername }: VoiceChannelProps) {
@@ -176,7 +113,7 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
   return (
     <div className="voice-fullscreen">
       <header className="voice-fullscreen-header">
-        <span>🔊 {channelName}</span>
+        <Mic size={16} /> {channelName}
       </header>
 
       {error && (
@@ -190,7 +127,9 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
 
       {remoteScreenSharer && !isViewingRemoteScreen && (
         <div className="voice-share-prompt">
-          <span>🖥️ {remoteScreenSharer.username} está compartilhando a tela</span>
+          <span>
+            <Monitor size={15} /> {remoteScreenSharer.username} está compartilhando a tela
+          </span>
           <button type="button" onClick={viewRemoteScreen}>
             Assistir
           </button>
@@ -211,7 +150,7 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
                   title={fullscreenTarget === 'local' ? 'Sair da tela cheia' : 'Ver em tela cheia'}
                   aria-label={fullscreenTarget === 'local' ? 'Sair da tela cheia' : 'Ver em tela cheia'}
                 >
-                  {fullscreenTarget === 'local' ? <CollapseIcon /> : <ExpandIcon />}
+                  {fullscreenTarget === 'local' ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                 </button>
               </div>
             )}
@@ -226,7 +165,7 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
                   title={fullscreenTarget === 'remote' ? 'Sair da tela cheia' : 'Ver em tela cheia'}
                   aria-label={fullscreenTarget === 'remote' ? 'Sair da tela cheia' : 'Ver em tela cheia'}
                 >
-                  {fullscreenTarget === 'remote' ? <CollapseIcon /> : <ExpandIcon />}
+                  {fullscreenTarget === 'remote' ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                 </button>
                 <button
                   type="button"
@@ -235,7 +174,7 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
                   title="Ocultar tela compartilhada"
                   aria-label="Ocultar tela compartilhada"
                 >
-                  ✕
+                  <X size={14} />
                 </button>
               </div>
             )}
@@ -303,7 +242,7 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
             title={isMuted ? 'Ativar microfone' : 'Mutar microfone'}
             aria-label={isMuted ? 'Ativar microfone' : 'Mutar microfone'}
           >
-            {isMuted ? <MicOffIcon /> : <MicIcon />}
+            {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
           </button>
 
           <button
@@ -313,7 +252,7 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
             title="Sair da call"
             aria-label="Sair da call"
           >
-            <HangupIcon />
+            <PhoneOff size={20} />
           </button>
 
           <button
@@ -324,7 +263,7 @@ function VoiceChannel({ serverId, channelId, channelName, localUserId, localUser
             title={isScreenShareSupported ? 'Compartilhar tela' : 'Compartilhamento de tela não é suportado neste dispositivo'}
             aria-label="Compartilhar tela"
           >
-            <ScreenShareIcon />
+            <MonitorUp size={20} />
           </button>
         </div>
       )}

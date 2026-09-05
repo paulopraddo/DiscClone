@@ -1,3 +1,4 @@
+import { Mic, X } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useVoiceCall } from '../contexts/VoiceCallContext'
 
@@ -18,7 +19,9 @@ function VoiceCallStatusBar() {
 
   return (
     <button type="button" className="voice-status-bar" onClick={() => navigate(voicePath)}>
-      <span className="voice-status-icon">🔊</span>
+      <span className="voice-status-icon">
+        <Mic size={14} />
+      </span>
       <span className="voice-status-text">Conectado em #{active.channelName}</span>
       <span
         className="voice-status-leave"
@@ -30,7 +33,7 @@ function VoiceCallStatusBar() {
           leaveCall()
         }}
       >
-        ✕
+        <X size={12} />
       </span>
     </button>
   )

@@ -1,13 +1,16 @@
 :root {
-  --rail-bg: #1e1f22;
-  --sidebar-bg: #2b2d31;
-  --chat-bg: #313338;
+  --rail-bg: #0a0a0a;
+  --sidebar-bg: #0d0d10;
+  --chat-bg: #111114;
   --text: #dbdee1;
-  --text-muted: #949ba4;
-  --text-h: #f2f3f5;
-  --accent: #5865f2;
-  --border: #26272b;
-  --sans: 'gg sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --text-muted: #a1a1aa;
+  --text-h: #f5f5f5;
+  --accent: #8f5df2;
+  --accent-gradient: linear-gradient(90deg, #8f9bff, #c084fc);
+  --border: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-bg-hover: rgba(255, 255, 255, 0.07);
+  --sans: 'Inter', 'gg sans', system-ui, 'Segoe UI', Roboto, sans-serif;
 }
 
 * {
@@ -35,6 +38,7 @@ body {
   width: 72px;
   flex-shrink: 0;
   background: var(--rail-bg);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -56,18 +60,21 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--sidebar-bg);
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
   color: var(--text-h);
   text-decoration: none;
   font-weight: 600;
   font-size: 15px;
-  transition: border-radius 0.15s ease, background 0.15s ease;
+  transition: border-radius 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
 .server-icon:hover,
 .server-icon.active {
   border-radius: 16px;
-  background: var(--accent);
+  background: var(--accent-gradient);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #0a0a0a;
 }
 
 .home-icon {
@@ -87,7 +94,7 @@ body {
   height: 20px;
   border-radius: 50%;
   border: 2px solid var(--rail-bg);
-  background: #2b2d31;
+  background: var(--sidebar-bg);
   color: var(--text-muted);
   cursor: pointer;
   align-items: center;
@@ -141,10 +148,14 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: var(--sidebar-bg);
+  background: rgba(20, 20, 24, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 12px;
   width: 200px;
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.6);
 }
 
 .panel-form-header {
@@ -176,7 +187,7 @@ body {
   border: none;
   border-radius: 4px;
   padding: 8px;
-  background: #1e1f22;
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text);
   font-size: 14px;
   font-family: inherit;
@@ -185,7 +196,7 @@ body {
 .create-server-form button,
 .create-channel-form button,
 .create-channel-button {
-  background: var(--accent);
+  background: var(--accent-gradient);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -208,6 +219,9 @@ body {
   background: transparent;
   color: var(--text-muted);
   text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .create-channel-button:hover {
@@ -218,6 +232,7 @@ body {
   width: 240px;
   flex-shrink: 0;
   background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
   padding: 16px 8px;
   overflow-y: auto;
 }
@@ -273,7 +288,7 @@ body {
   border: none;
   border-radius: 4px;
   padding: 4px 6px;
-  background: #1e1f22;
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text);
   font-size: 15px;
   font-family: inherit;
@@ -287,10 +302,10 @@ body {
   display: block;
   width: calc(100% - 16px);
   margin: 0 8px 12px;
-  border: none;
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 6px 8px;
-  background: #35373c;
+  background: var(--glass-bg);
   color: var(--text-muted);
   font-size: 12px;
   cursor: pointer;
@@ -317,15 +332,18 @@ body {
 }
 
 .channel-link-row:hover {
-  background: #35373c;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .channel-link-row:has(.channel-link.active) {
-  background: #3f4248;
+  background: linear-gradient(90deg, rgba(143, 155, 255, 0.16), rgba(192, 132, 252, 0.08));
+  box-shadow: inset 2px 0 0 0 #8f9bff;
 }
 
 .channel-link {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex: 1;
   padding: 7px 8px;
   border-radius: 4px;
@@ -376,7 +394,7 @@ body {
   border: none;
   border-radius: 4px;
   padding: 4px 6px;
-  background: #1e1f22;
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text);
   font-size: 14px;
   font-family: inherit;
@@ -460,7 +478,7 @@ body {
 
 .voice-share-prompt button {
   flex-shrink: 0;
-  background: var(--accent);
+  background: var(--accent-gradient);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -661,7 +679,7 @@ body {
   right: 4px;
   display: none;
   gap: 4px;
-  background: var(--bg-secondary, #2b2d31);
+  background: var(--sidebar-bg);
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 2px 4px;
@@ -730,10 +748,10 @@ body {
 
 .chat-input input {
   width: 100%;
-  border: none;
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
-  background: #383a40;
+  background: var(--glass-bg);
   color: var(--text);
   font-size: 15px;
   font-family: inherit;
@@ -744,21 +762,43 @@ body {
 }
 
 .auth-page {
+  position: relative;
   min-height: 100svh;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #0a0a0a;
+  overflow: hidden;
+}
+
+.auth-page::before {
+  content: '';
+  position: absolute;
+  top: -220px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 640px;
+  height: 480px;
+  border-radius: 50%;
+  filter: blur(120px);
+  background: radial-gradient(circle, rgba(88, 101, 242, 0.35), transparent 70%);
+  pointer-events: none;
 }
 
 .auth-form {
+  position: relative;
+  z-index: 1;
   width: 320px;
   max-width: calc(100vw - 32px);
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background: var(--sidebar-bg);
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
   padding: 32px;
-  border-radius: 8px;
+  border-radius: 16px;
 }
 
 .auth-form h1 {
@@ -779,7 +819,7 @@ body {
   border: none;
   border-radius: 4px;
   padding: 10px;
-  background: #1e1f22;
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text);
   font-size: 15px;
   font-family: inherit;
@@ -790,7 +830,7 @@ body {
 }
 
 .auth-form button {
-  background: var(--accent);
+  background: var(--accent-gradient);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -817,7 +857,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg, #313338);
+  background: #0a0a0a;
 }
 
 .error-boundary-box {
@@ -826,9 +866,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background: var(--sidebar-bg);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
   padding: 32px;
-  border-radius: 8px;
+  border-radius: 12px;
   text-align: center;
 }
 
@@ -845,7 +888,7 @@ body {
 }
 
 .error-boundary-box button {
-  background: var(--accent);
+  background: var(--accent-gradient);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -856,7 +899,7 @@ body {
 }
 
 .auth-switch a {
-  color: var(--accent);
+  color: #c9a8fb;
 }
 
 .auth-hint {
@@ -888,7 +931,7 @@ body {
 }
 
 .auth-form .auth-secondary-button:hover {
-  background: #1e1f22;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .auth-form .auth-secondary-button:disabled {
@@ -908,6 +951,9 @@ body {
 
 .voice-fullscreen-header {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--text-h);
   font-weight: 600;
   font-size: 16px;
@@ -972,7 +1018,10 @@ body {
   transform: translateX(-50%);
   display: flex;
   gap: 16px;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(20, 20, 24, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
   padding: 12px 16px;
   border-radius: 999px;
 }
@@ -982,17 +1031,17 @@ body {
   height: 48px;
   flex-shrink: 0;
   border-radius: 50%;
-  border: none;
+  border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--sidebar-bg);
+  background: var(--glass-bg);
   color: var(--text-h);
   cursor: pointer;
 }
 
 .voice-control-btn:hover {
-  background: #3f4248;
+  background: var(--glass-bg-hover);
 }
 
 .voice-control-btn:disabled {
@@ -1014,7 +1063,7 @@ body {
 }
 
 .voice-control-btn.active {
-  background: var(--accent);
+  background: var(--accent-gradient);
   color: #fff;
 }
 
@@ -1057,11 +1106,14 @@ body {
   gap: 8px;
   max-width: 280px;
   padding: 8px 10px;
-  border: none;
-  border-radius: 8px;
-  background: #248046;
-  color: #fff;
+  border: 1px solid rgba(59, 165, 93, 0.4);
+  border-radius: 999px;
+  background: rgba(20, 20, 24, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: #86efac;
   font-size: 13px;
+  font-weight: 600;
   font-family: inherit;
   cursor: pointer;
 }
