@@ -1,0 +1,32 @@
+.landing-footer {
+  background: #0a0a0a;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 32px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.landing-footer-logo {
+  font-weight: 700;
+  font-size: 14px;
+  color: #f5f5f5;
+}
+
+.landing-footer-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: #a1a1aa;
+  text-decoration: none;
+}
+
+.landing-footer-link:hover {
+  color: #f5f5f5;
+}
+
+.landing-footer-note {
+  font-size: 12px;
+  color: #6d6d78;
+}

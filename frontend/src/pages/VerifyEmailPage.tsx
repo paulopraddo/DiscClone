@@ -27,7 +27,7 @@ function VerifyEmailPage() {
 
     try {
       await verifyEmail(email, code)
-      navigate('/')
+      navigate('/app')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao confirmar o e-mail.')
     } finally {

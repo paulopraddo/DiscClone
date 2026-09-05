@@ -19,7 +19,7 @@ function LoginPage() {
 
     try {
       await login(email, password)
-      navigate('/')
+      navigate('/app')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Falha ao entrar.'
       setError(message)
