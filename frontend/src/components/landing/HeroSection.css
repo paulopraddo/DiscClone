@@ -150,7 +150,8 @@
 .hero-word-mask {
   display: inline-block;
   overflow: hidden;
-  padding-bottom: 0.08em;
+  padding-bottom: 0.25em;
+  margin-bottom: -0.25em;
 }
 
 .hero-word {
