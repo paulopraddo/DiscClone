@@ -1,4 +1,4 @@
-import { Link2, LogOut, Plus, Power, Trash2, X } from 'lucide-react'
+import { Link2, LogOut, Plus, Power, RefreshCw, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -8,7 +8,15 @@ type PanelMode = 'closed' | 'create' | 'join'
 
 function ServerRail() {
   const { user, logout } = useAuth()
-  const { servers, createServer, joinServer, leaveServer, deleteServer } = useServers()
+  const {
+    servers,
+    createServer,
+    joinServer,
+    leaveServer,
+    deleteServer,
+    error: loadError,
+    refresh,
+  } = useServers()
   const [mode, setMode] = useState<PanelMode>('closed')
   const [name, setName] = useState('')
   const [serverId, setServerId] = useState('')
@@ -114,6 +122,16 @@ function ServerRail() {
         DC
       </NavLink>
       <div className="server-rail-divider" />
+      {loadError && servers.length === 0 && (
+        <button
+          type="button"
+          className="server-icon server-icon-error"
+          title={`${loadError} Clique para tentar de novo.`}
+          onClick={() => refresh()}
+        >
+          <RefreshCw size={16} />
+        </button>
+      )}
       {servers.map((server) => {
         const isOwner = server.ownerId === user?.userId
 

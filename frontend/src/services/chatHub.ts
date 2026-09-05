@@ -1,4 +1,5 @@
 import { HubConnectionBuilder, HubConnectionState, LogLevel, type HubConnection } from '@microsoft/signalr'
+import { notifyUnauthorized } from '../lib/authEvents'
 
 export interface VoiceParticipant {
   peerId: string
@@ -72,6 +73,14 @@ export async function ensureConnected(): Promise<HubConnection> {
 
   connectPromise ??= hub.start().catch((err) => {
     connectPromise = null
+
+    // O SignalR não expõe um status code tipado aqui — só a mensagem do erro
+    // de negociação. É a mesma sessão morta que a API REST detecta como 401;
+    // avisamos o mesmo jeito para a pessoa não ficar presa numa tela vazia.
+    if (authToken && err instanceof Error && /401|unauthorized/i.test(err.message)) {
+      notifyUnauthorized()
+    }
+
     throw err
   })
 

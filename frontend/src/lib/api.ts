@@ -1,3 +1,5 @@
+import { notifyUnauthorized } from './authEvents'
+
 export interface AuthResponse {
   userId: string
   username: string
@@ -46,6 +48,14 @@ async function request<T>(path: string, options: { method: string; body?: unknow
     },
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   })
+
+  // Um 401 só significa "sessão expirada" quando a requisição já ia com um
+  // token (rotas autenticadas). Sem token, é um 401 de credenciais erradas
+  // no login — não deve derrubar a sessão nem quem ainda não está logado.
+  if (response.status === 401 && authToken) {
+    notifyUnauthorized()
+    throw new Error('Sessão expirada. Faça login novamente.')
+  }
 
   const data = await response.json().catch(() => null)
 
