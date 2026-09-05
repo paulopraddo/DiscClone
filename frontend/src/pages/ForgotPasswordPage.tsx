@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import Logo from '../components/Logo'
 import { useAuth } from '../contexts/AuthContext'
 
 function ForgotPasswordPage() {
@@ -51,6 +52,7 @@ function ForgotPasswordPage() {
     return (
       <div className="auth-page">
         <form className="auth-form" onSubmit={handleRequestCode}>
+          <Logo size={36} className="auth-form-logo" />
           <h1>Esqueci minha senha</h1>
           <p className="auth-hint">Informe seu e-mail para receber um código de redefinição de senha.</p>
 
@@ -76,6 +78,7 @@ function ForgotPasswordPage() {
   return (
     <div className="auth-page">
       <form className="auth-form" onSubmit={handleResetPassword}>
+        <Logo size={36} className="auth-form-logo" />
         <h1>Redefinir senha</h1>
         <p className="auth-hint">Informe o código recebido por e-mail e escolha uma nova senha.</p>
 

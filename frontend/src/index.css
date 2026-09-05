@@ -82,10 +82,6 @@ body {
   color: #0a0a0a;
 }
 
-.home-icon {
-  font-size: 13px;
-}
-
 .server-icon-row {
   position: relative;
 }
@@ -804,6 +800,11 @@ body {
   border: 1px solid var(--border);
   padding: 32px;
   border-radius: 16px;
+}
+
+.auth-form-logo {
+  align-self: center;
+  margin-bottom: 4px;
 }
 
 .auth-form h1 {

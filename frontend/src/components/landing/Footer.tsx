@@ -1,10 +1,14 @@
 import { Link } from 'react-router-dom'
+import Logo from '../Logo'
 import './Footer.css'
 
 function Footer() {
   return (
     <footer className="landing-footer">
-      <span className="landing-footer-logo">DiscClone</span>
+      <span className="landing-footer-logo">
+        <Logo size={18} />
+        DiscClone
+      </span>
       <Link to="/login" className="landing-footer-link">
         Entrar
       </Link>

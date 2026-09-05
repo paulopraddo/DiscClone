@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Hash, MessageSquare, Mic, Play, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import Logo from '../Logo'
 import './HeroSection.css'
 
 const titleLine1 = 'Seu lugar para'.split(' ')
@@ -28,7 +29,10 @@ function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
         >
-          <span className="hero-logo">DiscClone</span>
+          <span className="hero-logo-group">
+            <Logo size={22} />
+            <span className="hero-logo">DiscClone</span>
+          </span>
           <Link to="/login" className="hero-navbar-cta">
             Entrar
           </Link>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import Logo from '../components/Logo'
 import { useAuth } from '../contexts/AuthContext'
 
 interface LocationState {
@@ -58,6 +59,7 @@ function VerifyEmailPage() {
   return (
     <div className="auth-page">
       <form className="auth-form" onSubmit={handleSubmit}>
+        <Logo size={36} className="auth-form-logo" />
         <h1>Confirme seu e-mail</h1>
         <p className="auth-hint">
           Enviamos um código de 6 dígitos para o seu e-mail. Informe-o abaixo para ativar sua conta.

@@ -73,6 +73,12 @@
   -webkit-backdrop-filter: blur(20px);
 }
 
+.hero-logo-group {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
 .hero-logo {
   font-weight: 700;
   font-size: 15px;

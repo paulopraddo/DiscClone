@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import Logo from '../components/Logo'
 import { useAuth } from '../contexts/AuthContext'
 
 function LoginPage() {
@@ -32,6 +33,7 @@ function LoginPage() {
   return (
     <div className="auth-page">
       <form className="auth-form" onSubmit={handleSubmit}>
+        <Logo size={36} className="auth-form-logo" />
         <h1>Entrar</h1>
 
         {sessionExpired && !error && (

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useServers } from '../contexts/ServersContext'
+import Logo from './Logo'
 
 type PanelMode = 'closed' | 'create' | 'join'
 
@@ -118,8 +119,8 @@ function ServerRail() {
 
   return (
     <nav className="server-rail">
-      <NavLink to="/" end className="server-icon home-icon">
-        DC
+      <NavLink to="/app" end className="server-icon home-icon" title="Início">
+        <Logo size={22} />
       </NavLink>
       <div className="server-rail-divider" />
       {loadError && servers.length === 0 && (
